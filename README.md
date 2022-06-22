@@ -93,7 +93,7 @@ WHERE Cover != null
 ```
 ---
 ## Available Variables for your book template:
-Below are the possible variables to use in your template. Simply write `{{VALUE:name}}` in your template, and replace `name` by the desired book data, including:
+Below are the possible variables to use in your template. Simply write `{{VALUE:name}}` in your template, and replace `name` by the desired book data. Possible field results are presented in [ ] and the source (src) of the field is presented in ( ).
 
 **Main Title** (the main title of the book):
 - `titleGOOG` : (src: Google)
@@ -102,55 +102,58 @@ Below are the possible variables to use in your template. Simply write `{{VALUE:
 - `subTitleGOOG` : The subtitle of the book (also known as "title tag") (src: Google)
 - `fullTitleGOOG` : A full title (combined main title & subtitle) (src: Google)
 
-**Authors** (a list of the book's authors):
-- `authorsGOOG` : (src: Google)
-- `authorsGR` : (src: Goodreads)
+**Authors** (a `[[wiklink]]` list of the book's authors):
+- `authorsGOOG` : `[[author 1]], [[author 2]], [[author 3]]` (src: Google) 
+- `authorsGR` : `[[author 1]], [[author 2]], [[author 3]]` (src: Goodreads)  
 
-**Genres** (a list of the book's genres):
-- `genresGOOG` : (src: Google)
-- `genresGR` : (src: Goodreads) > *recommended*
+**Genres** (a `[[wiklink]]` list of the book's genres):
+- `genresGOOG` : `[[genre 1]], [[genre 2]], [[genre 3]]` (src: Google)
+- `genresGR` : `[[genre 1]], [[genre 2]], [[genre 3]]`  (src: Goodreads) > *recommended*
 
 **Abstract** (a brief description of the book, like the blub you would find on a book jacket):
-- `abstractGOOG` : (src: Google) > shorter descriptions 
-- `abstractGR` : (src: Goodreads) > full, longer descriptions
+- `abstractGOOG` : `[shorter descriptions]` (src: Google)
+- `abstractGR` : `[full, longer descriptions]` (src: Goodreads)
 
-**Rating (value)** (the book rating out of 5 stars on the respective websites):
-- `ratingGOOG` : (src: Google)
-- `ratingGR` : (src: Goodreads) > *recommended*
+**Rating (value)** (the book's averaged rating (out of 5 stars) on the respective websites):
+- `avRatingGOOG` : `[4]` (src: Google)
+- `avRatingGR` : `[4.63]` (src: Goodreads) > *recommended*
 
 **Number of Ratings** (the total # of ratings that make up the above rating value):
-- `numRatingsGOOG` : (src: Google)
-- `numRatingsGR` : (src: Goodreads) > *recommended*
+- `numRatingsGOOG` : `[1123]` (src: Google)
+- `numRatingsGR` : `[3728327]` (src: Goodreads) > *recommended*
 
-- `numReviewsGR` : total # of written reviews on Goodreads
+- `numReviewsGR` : `[26181]` total # of written reviews on Goodreads
 
 **Book Cover Image** (the URL address of the book's cover image from the respective sites):
-- `coverURLGOOG` : (src: Google)
-- `coverURLGR` : (src: Goodreads) > *recommended* (higher quality)
+- `coverURLGOOG` : `[http://books.google.com/books/content?id=kIjwwAEACAAJ&printsec=frontcover&img=1&zoom=1&source=gbs_api]` (src: Google)
+- `coverURLGR` : `[https://i.gr-assets.com/images/S/compressed.photo.goodreads.com/books/1388184640l/7235533.jpg]`(src: Goodreads) > *recommended* (higher quality)
 
 **Book URL** (the URL address to the book's info page on the respective sites):
-- `bookURLGOOG` : (src: Google)
-- `bookURLGR` : (src: Goodreads)
+- `bookURLGOOG` : `[https://books.google.com/books/about/The_Way_of_Kings.html?hl=&id=kIjwwAEACAAJ]`(src: Google)
+- `bookURLGR` : `[https://www.goodreads.com/book/show/7235533-the-way-of-kings]` (src: Goodreads)
 
 **Book Format** (the format of the book you selected (ie. hardcover, paperback, kindle, audiobook, etc.)):
-- `bookFormGOOG` : (src: Google)
-- `bookFormGR` : (src: Goodreads)
+- `bkFormGOOG` : `[BOOK] or [MAGAZINE]`(src: Google)
+- `bkFormGR` : `[hardcover, paperback, audiobook, kindle edition, etc.]` (src: Goodreads) > *recommended*
 
 **Page Count** (the total pages in the print book version):
-- `pageCtGOOG` : (src: Google)
-- `pageCtGR` : (src: Goodreads)
+- `pageCtGOOG` : `[1008]` (src: Google)
+- `pageCtGR` : `[1008]`(src: Goodreads)
 
 **Language** (the language of the book you selected):
-- `langGOOG` : (src: Google)
-- `langGR` : (src: Goodreads)
+- `langGOOG` : `[en]` (src: Google)
+- `langGR` : `[English]`(src: Goodreads)
 
-**ISBN** (the ISBN10 & ISBN13 of the book):
-- `isbn13GR` : (src: Goodreads)
-- `isbn10GR` : (src: Goodreads)
+**ISBN** (ISBN10 & ISBN13 of the book):
+- `isbn13` : `[9780765326355]` (src: Google)
+- `isbn10` : `[0765326353]` (src: Google)
+- `isbn13GR` : `[9780765326355]` (src: Goodreads)
+- `isbn10GR` : `[0765326353]` (src: Goodreads)
 
 **Other**:
-- `publisherGOOG` : The book's publisher (src: Google)
-- `pubYearGOOG` : The year the book was published (src: Google)
-- `seriesGR` : The series the book in part of (src: Goodreads)
-- `bookIDGR` : The unique Goodreads ID for the book (src: Goodreads)
+- `publisherGOOG` : `[Tor Books]` the book's publisher (src: Google)
+- `pubYearGOOG` : `[2010]` the year the book was published (src: Google)
+- `seriesGR` : `[The Stormlight Archive #1]` the series & book # (if available) (src: Goodreads)
+- `bookIDGR` : `[7235533]`  the Goodreads ID for the book (src: Goodreads)
+- `maturityGOOG` : `[MATURE] or [NOT_MATURE]` whether the book is rated as mature or not (src: Google)
 

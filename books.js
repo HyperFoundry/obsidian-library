@@ -66,36 +66,37 @@ async function start(params, settings) {
 		titleGOOG: googleMData.title,
 		subTitleGOOG: `${googleMData.subtitle}` || " ",
 		fullTitleGOOG: `${googleMData.subtitle ? `${googleMData.title}: ${googleMData.subtitle}` : googleMData.title}`,
-		authorsGOOG: wikiLinkList(googleMData.authors),
-		genresGOOG: wikiLinkList(googleMData.categories),
+		authorsGOOG: wikiLnkList(googleMData.authors),
+		genresGOOG: wikiLnkList(googleMData.categories),
+		abstractGOOG: googleMData.description,
 		publisherGOOG: googleMData.publisher,
 		pubYearGOOG: googleMData.publishedDate ? new Date(googleMData.publishedDate).getFullYear() : " ",
-		abstractGOOG: googleMData.description,
-		pageCountGOOG: googleMData.pageCount || googleMData.printedPageCount,
-		ratingValueGOOG: googleMData.averageRating,
-		ratingsCountGOOG: googleMData.ratingsCount,
-		bookFormatGOOG: googleMData.printType,
+		pageCtGOOG: googleMData.pageCount || googleMData.printedPageCount,
+		avRatingGOOG: googleMData.averageRating,
+		numRatingsGOOG: googleMData.ratingsCount,
+		bkFormGOOG: googleMData.printType,
 		langGOOG: googleMData.language,
-		coverURLGOOG: googleMData.imageLinks.thumbnail,
+		coverURLGOOG: `${googleMData.imageLinks?.thumbnail}`.replace("http:", "https:"),
 		bookURLGOOG: googleMData.canonicalVolumeLink,
+		maturityGOOG: googleMData.maturityRating,
 		//bookIDGOOG: 
 		
         // GOODREADS Metadata categories scraped from book page (with better/cleaner data than Google)
 		titleGR: greadsMData.title,
-        authorsGR: wikiLinkList(greadsMData.authors),
-		genresGR: wikiLinkList(greadsMData.genres),
+        authorsGR: wikiLnkList(greadsMData.authors),
+		genresGR: wikiLnkList(greadsMData.genres),
 		seriesGR: greadsMData.series,
 		abstractGR: greadsMData.abstract,
 		isbn13GR: greadsMData.isbn13,
         isbn10GR: greadsMData.isbn10,
-		pageCountGR: greadsMData.pageCount,
-		ratingValueGR: greadsMData.ratingValue,
+		pageCtGR: greadsMData.pageCount,
+		avRatingGR: greadsMData.ratingValue,
 		numRatingsGR: greadsMData.numRatings,
 		numReviewsGR: greadsMData.numReviews,
-        bookFormatGR: greadsMData.bookFormat,
+        bkFormGR: greadsMData.bookFormat,
 		langGR: greadsMData.language,
 		coverURLGR: greadsMData.coverURL,
-		bookURLGR: greadsMData.goodreadsURL,
+		bookURLGR: `${greadsMData.goodreadsURL}`.replace(/^app:\/\/obsidian.md/gm, "https://www.goodreads.com"),
 		bookIDGR: greadsMData.goodreadsID,
 	};
 }
@@ -158,7 +159,7 @@ let scrapeGoodreads = async (isbn) => {
 	isbn13: $("meta[property='books:isbn']").content || $("div#bookDataBox div.infoBoxRowItem span[itemprop=isbn]").textContent,
 	goodreadsID: $("div.wtrUp #book_id").value,
 	goodreadsURL: $("a.bookLink").href || $("meta[property='og:url']").content,
-	isbn10: $("div#bookDataBox div.clearFloats:nth-child(2) div.infoBoxRowItem").textContent.trim() || "",
+	isbn10: $("div#bookDataBox div.clearFloats:nth-child(2) div.infoBoxRowItem").textContent.match(/\b\d{10}\b/g)[0] || "",
 	language: $("div#bookDataBox div.clearFloats:nth-child(3) div.infoBoxRowItem").textContent.trim() || ""
 	}
 	return goodreadsBook;
@@ -175,7 +176,7 @@ function formatSuggestions(resultItem) {
 	resultItem.volumeInfo.industryIdentifiers.find(element => element.type === "ISBN_13")?.identifier})`;
 }
 
-function wikiLinkList(list) { // make multiple entries like author & genre into a wikilinks list
+function wikiLnkList(list) { // make multiple entries like author & genre into a wikilinks list
 	if (list.length === 0) return "";
 	if (list.length === 1) return `[[${list[0]}]]`;
 	return list.map((item) => `[[${item.trim()}]]`).join(", ");
