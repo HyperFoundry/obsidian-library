@@ -19,10 +19,10 @@ The script is inspired by [QuickAdd - Movie And Series Script](https://github.co
 ---
 ## Installation
 **Requirement:**
-- the latest version of [QuickAdd](https://github.com/chhoumann/quickadd) for Obsidian (v. 0.5.5)
+- the latest version of [QuickAdd (v. 0.5.5)](https://github.com/chhoumann/quickadd) for Obsidian 
 
 1. Save the [script](https://github.com/HyperFoundry/obsidian-library/blob/main/books.js) to your vault. Make sure it is saved as a JavaScript file, meaning that it has the `.js` extension at the end
-2. Save my example book template to your vault, or create your own book template in vault. An example template is also provided below
+2. Save my example [book template](https://github.com/HyperFoundry/obsidian-library/blob/main/Book_ExTemplate.md) to your vault, or create your own book template in vault. An example template is also provided below
 3. Go into your Obsidian settings > QuickAdd plugin > Manage Macros 
 	1. within `Macro name` type your macro name (example: Lookup Book) > *click* "Add Macro"
 6. Under your new macro, *click* "Configure"
