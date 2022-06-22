@@ -6,19 +6,19 @@
 ## Description
 This script allows you to easily add a book note with a wide range of metadata fields to your Obsidian vault using [Quickadd plugin](https://github.com/chhoumann/quickadd) by @chhoumann.
 
-To gather book information, the script queries Google Books API (no API key needed!) and scrapes the Goodreads website for metadata related to your book.
+The script queries the [Google Books API](https://developers.google.com/books/) (no API key needed!) and scrapes the Goodreads website for metadata related to your book.
 
 ---
 ## Disclaimer
-The script is inspired by and based on [QuickAdd - Movie And Series Script](https://github.com/chhoumann/quickadd/blob/master/docs/Examples/Macro_MovieAndSeriesScript.md) by @chhoumann and the [QuickAdd - Books Script](https://github.com/Elaws/script_googleBooks_quickAdd) by @Elaws
+The script is inspired by [QuickAdd - Movie And Series Script](https://github.com/chhoumann/quickadd/blob/master/docs/Examples/Macro_MovieAndSeriesScript.md) by @chhoumann and the [QuickAdd - Books Script](https://github.com/Elaws/script_googleBooks_quickAdd) by @Elaws
 
-I am new to programming, and I welcome any and all feedback. I have commented the script thoroughly to help others understand it. I am not responsible for any damage caused by the use of this script.
+I am new to programming. I welcome any and all feedback. I am not responsible for any damage caused by the use of this script. I have commented the script thoroughly to help others understand it.
 
 **Please never run a script that you don't understand. Remember to make regular backups of your Obsidian's vault!**
 
 ---
 ## Installation
-Requirements:
+**Requirements:**
 - the latest version of [QuickAdd](https://github.com/chhoumann/quickadd) for Obsidian (v. 0.5.5)
 
 1. Save the [script](https://github.com/HyperFoundry/obsidian-library/blob/main/books.js) to your vault. Make sure it is saved as a JavaScript file, meaning that it has the `.js` at the end
@@ -35,7 +35,7 @@ Requirements:
 	2. in the dropdown list, *select* "Macro", *click* Add Choice
 8. *Click* the ⚙ (gear icon) for your new Macro, and attach the macro you created in Step 3.1 (ie. Lookup Book)
 9. *Click* the ⚡so that its yellow which add the Macro to your command palette
-10. ***Optional:* Assign a hotkey to your macro for quicker access
+10. *Optional:* Assign a hotkey to your macro for quicker access
 
 **Great! You can now use the macro to quick create a new book note to add book information to your vault!**
 
@@ -58,11 +58,11 @@ Subtitle:: {{VALUE:subTitleGOOG}}
 Authors:: {{VALUE:authorsGOOG}}
 Publication Year:: {{VALUE:pubYearGOOG}}
 Series:: {{VALUE:seriesGR}}
-GenresGR:: {{VALUE:genresGR}}
+Genres:: {{VALUE:genresGR}}
 Abstract:: {{VALUE:abstractGR}}
 
-Goodreads Rating:: {{VALUE:ratingGR}}
-Goodreads Ratings:: {{VALUE:numRatingsGR}}
+Rating:: {{VALUE:ratingGR}}
+Total Ratings:: {{VALUE:numRatingsGR}}
 Goodreads Reviews:: {{VALUE:numReviewsGR}}
 
 ## Books Links: 
@@ -78,19 +78,21 @@ Date Added:: [[{{DATE:gggg-MM-DD}}]]
 
 ```
 
-## Dataview query rendering (Example)
+## Dataview query rendering (Example):
+```
 ```dataview
 TABLE WITHOUT ID 
-	("![](" + Cover + ")") AS Poster,
+	("![](" + Cover + ")") AS Cover,
 	Title AS Title,
 	"by " + Authors AS Authors,
 	Genre AS Genre,
+	"Rating: " + Rating AS "Rating",
 	"Date Added: " + Date Added AS "Date Added"
 FROM #to-read AND "Library" AND #📚books AND -"_templates"
 WHERE Cover != null
 ```
 ---
-## Definitions of available variables for your template:
+## Available Variables for your book template:
 Below are the possible variables to use in your template. Simply write `{{VALUE:name}}` in your template, and replace `name` by the desired book data, including:
 
 **Main Title** (the main title of the book):
