@@ -96,60 +96,61 @@ WHERE Cover != null
 Below are the possible variables to use in your template. Simply write `{{VALUE:name}}` in your template, and replace `name` by the desired book data, including:
 
 **Main Title** (the main title of the book):
-- `titleGOOG` : (source: Google)
-- `titleGR` : (source: Goodreads)
+- `titleGOOG` : (src: Google)
+- `titleGR` : (src: Goodreads)
 
-- `subTitleGOOG` : The subtitle of the book (also known as "title tag") (source: Google)
-- `fullTitleGOOG` : A full title (combined main title & subtitle) (source: Google)
+- `subTitleGOOG` : The subtitle of the book (also known as "title tag") (src: Google)
+- `fullTitleGOOG` : A full title (combined main title & subtitle) (src: Google)
 
 **Authors** (a list of the book's authors):
-- `authorsGOOG` : (source: Google)
-- `authorsGR` : (source: Goodreads)
+- `authorsGOOG` : (src: Google)
+- `authorsGR` : (src: Goodreads)
 
 **Genres** (a list of the book's genres):
-- `genresGOOG` : (source: Google)
-- `genresGR` : (source: Goodreads) > *recommended*
+- `genresGOOG` : (src: Google)
+- `genresGR` : (src: Goodreads) > *recommended*
 
 **Abstract** (a brief description of the book, like the blub you would find on a book jacket):
-- `abstractGOOG` : (source: Google) > shorter descriptions 
-- `abstractGR` : (source: Goodreads) > full, longer descriptions
+- `abstractGOOG` : (src: Google) > shorter descriptions 
+- `abstractGR` : (src: Goodreads) > full, longer descriptions
 
 **Rating (value)** (the book rating out of 5 stars on the respective websites):
-- `ratingGOOG` : (source: Google) 
-- `ratingGR` : (source: Goodreads) > *recommended*
+- `ratingGOOG` : (src: Google)
+- `ratingGR` : (src: Goodreads) > *recommended*
 
 **Number of Ratings** (the total # of ratings that make up the above rating value):
-- `numRatingsGOOG` : (source: Google)
-- `numRatingsGR` : (source: Goodreads) > *recommended*
+- `numRatingsGOOG` : (src: Google)
+- `numRatingsGR` : (src: Goodreads) > *recommended*
 
 - `numReviewsGR` : total # of written reviews on Goodreads
 
 **Book Cover Image** (the URL address of the book's cover image from the respective sites):
-- `coverURLGOOG` : (source: Google)
-- `coverURLGR` : (source: Goodreads) > *recommended* (higher quality)
+- `coverURLGOOG` : (src: Google)
+- `coverURLGR` : (src: Goodreads) > *recommended* (higher quality)
 
 **Book URL** (the URL address to the book's info page on the respective sites):
-- `bookURLGOOG` : (source: Google)
-- `bookURLGR` : (source: Goodreads)
+- `bookURLGOOG` : (src: Google)
+- `bookURLGR` : (src: Goodreads)
 
 **Book Format** (the format of the book you selected (ie. hardcover, paperback, kindle, audiobook, etc.)):
-- `bookFormGOOG` : (source: Google)
-- `bookFormGR` : (source: Goodreads)
+- `bookFormGOOG` : (src: Google)
+- `bookFormGR` : (src: Goodreads)
 
 **Page Count** (the total pages in the print book version):
-- `pageCtGOOG` : (source: Google)
-- `pageCtGR` : (source: Goodreads)
+- `pageCtGOOG` : (src: Google)
+- `pageCtGR` : (src: Goodreads)
 
 **Language** (the language of the book you selected):
-- `langGOOG` : (source: Google)
-- `langGR` : (source: Goodreads)
+- `langGOOG` : (src: Google)
+- `langGR` : (src: Goodreads)
 
 **ISBN** (the ISBN10 & ISBN13 of the book):
-- `isbn13GR` : (source: Goodreads)
-- `isbn10GR` : (source: Goodreads)
+- `isbn13GR` : (src: Goodreads)
+- `isbn10GR` : (src: Goodreads)
 
-- `publisherGOOG` : The book's publisher (source: Google)
-- `pubYearGOOG` : The year the book was published (source: Google)
-- `seriesGR` : The series the book in part of (source: Goodreads)
-- `bookIDGR` : The unique Goodreads ID for the book (source: Goodreads)
+**Other**:
+- `publisherGOOG` : The book's publisher (src: Google)
+- `pubYearGOOG` : The year the book was published (src: Google)
+- `seriesGR` : The series the book in part of (src: Goodreads)
+- `bookIDGR` : The unique Goodreads ID for the book (src: Goodreads)
 
