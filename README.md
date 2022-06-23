@@ -44,10 +44,11 @@ The script is inspired by [QuickAdd - Movie And Series Script](https://github.co
 ```markdown
 ---
 Cover: {{VALUE:coverURLGR}}
-ISBN13: {{VALUE:isbn13GR}}
-ISBN10: {{VALUE:isbn10GR}}
+ISBN13: {{VALUE:isbn13}}
+ISBN10: {{VALUE:isbn10}}
 Pages: {{VALUE:pageCtGR}}
-Goodreads ID: {{VALUE:bookIDGR}}
+Goodreads ID: {{VALUE:goodreadsID}}
+Amazon ASIN: {{VALUE:amazonASIN}}
 
 ---
 
@@ -65,12 +66,13 @@ Rating:: {{VALUE:avRatingGR}}
 Total Ratings:: {{VALUE:numRatingsGR}}
 Goodreads Reviews:: {{VALUE:numReviewsGR}}
 
-## Book Links: 
-Google URL:: [Google]({{VALUE:bookURLGOOG}})
+## Book Links:
+Amazon URL:: [Amazon]({{VALUE:amazonURL}})
 Goodreads URL:: [Goodreads]({{VALUE:bookURLGR}})
+Google URL:: [Google]({{VALUE:bookURLGOOG}})
 
 Date Added:: [[{{DATE:gggg-MM-DD}}]]
-#📚books {{VALUE:#to-read,#finished-reading}}
+#📚books {{VALUE:#want-to-read,#currently-reading,#read}}
 
 ---
 
@@ -129,12 +131,13 @@ Below are the possible fields to use in your book template. Simply write `{{VALU
 - `coverURLGR`: `[https://i.gr-assets.com/images/S/compressed.photo.goodreads.com/books/1388184640l/7235533.jpg]` (src: Goodreads) > *recommended* (higher quality)
 
 **Book URL** (the URL address to the book's main page on the respective sites):
-- `bookURLGOOG`: `[https://books.google.com/books/about/The_Way_of_Kings.html?hl=&id=kIjwwAEACAAJ]`(src: Google)
-- `bookURLGR`: `[https://www.goodreads.com/book/show/7235533-the-way-of-kings]` (src: Goodreads)
+- `googleURL`: `[https://books.google.com/books/about/The_Way_of_Kings.html?hl=&id=kIjwwAEACAAJ]`(src: Google)
+- `goodreadsURL`: `[https://www.goodreads.com/book/show/7235533-the-way-of-kings]` (src: Goodreads)
+- `amazonURL`: `[https://www.amazon.com/gp/product/B00540QR7Q]` (src: Goodreads)
 
 **Book Format** (the format of the particular book you selected):
 - `bkFormGOOG`: `[BOOK] or [MAGAZINE]`(src: Google)
-- `bkFormGR`: `[hardcover, paperback, audiobook, kindle edition, etc.]` (src: Goodreads) > *recommended*
+- `bkFormGR`: `[hardcover, paperback, audiobook, kindle edition, ebook, etc.]` (src: Goodreads) > *recommended*
 
 **Page Count** (the total # pages in the book's print version):
 - `pageCtGOOG`: `[1008]` (src: Google)
@@ -150,10 +153,14 @@ Below are the possible fields to use in your book template. Simply write `{{VALU
 - `isbn13GR`: `[9780765326355]` (src: Goodreads)
 - `isbn10GR`: `[0765326353]` (src: Goodreads)
 
+**Unique IDs** (the book's unique identifier for each respective site):
+- `googleID`: `[kIjwwAEACAAJ]` (src: Google)
+- `goodreadsID`: `[7235533]` (src: Goodreads)
+- `amazonASIN`: `[B00540QR7Q]` (src: Goodreads)
+
 **Other**:
 - `publisherGOOG`: `[Tor Books]` the book's publishing company (src: Google)
 - `pubYearGOOG`: `[2010]` the year the book was published (src: Google)
 - `seriesGR`: `[The Stormlight Archive #1]` the series & book # (if available) (src: Goodreads)
-- `bookIDGR`: `[7235533]`  Goodread's unique ID for the book (src: Goodreads)
 - `maturityGOOG`: `[MATURE] or [NOT_MATURE]` whether the book is rated as mature or not (src: Google)
 

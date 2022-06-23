@@ -35,10 +35,10 @@ async function start(params, settings) {
 
 	query = isbnCheck(query); // check if user query has ISBN identifying info
 	if (query.isbnID) { // if there is ISBN info, we will query Google Books API & scrape the book's Goodreads page at the same time
-		[[googleMData], greadsMData] = await Promise.all([apiGet(query.isbnQuery), scrapeGoodreads(query.isbnID)]); 
+		[[googleMData], greadsMData] = await Promise.all([fetchAPIdata(query.isbnQuery), scrapeBookData(query.isbnID)]); 
 		googleMData &&= googleMData.volumeInfo; // if Google books returns a result, overwrite its variable with just the book metadata
 	} else { 
-		const options = await apiGet(query); // if user query has no ISBN identifying info, sent query to Google Books API
+		const options = await fetchAPIdata(query); // if user query has no ISBN identifying info, sent query to Google Books API
 		const uniqueOptions = [...new Map(options.map(a => [JSON.stringify(a.volumeInfo.industryIdentifiers.find(e => e.type === "ISBN_13").identifier), a])).values()]; // deduplicates the search results using ISBN13 #s as comparison & a key
 
 		let selectedBook = await QuickAdd.quickAddApi.suggester( // provide user with list of options returned by Google Books API
@@ -52,15 +52,14 @@ async function start(params, settings) {
 		googleMData = selectedBook.volumeInfo; // save the user's selected book
 		const isbn13 = googleMData.industryIdentifiers.find(n => n.type === "ISBN_13")?.identifier; // extract ISBNs from Google Book Metadata
 		const isbn10 = googleMData.industryIdentifiers.find(n => n.type === "ISBN_10")?.identifier;
-		greadsMData = await scrapeGoodreads(isbn13 || isbn10); // for the ISBN; scrape the corresponding Goodreads books page
+		greadsMData = await scrapeBookData(isbn13 || isbn10); // for the ISBN; scrape the corresponding Goodreads books page
 	}
-
-	console.log({googleMData});
-	console.log({greadsMData});
 
 	QuickAdd.variables = {
 		...googleMData,
 		...greadsMData,
+
+		fileName: `${googleMData.title} - ${googleMData.authors}`,
 
 		// GOOGLE Metadata categories gathered from Google Books API
 		titleGOOG: googleMData.title,
@@ -76,10 +75,9 @@ async function start(params, settings) {
 		numRatingsGOOG: googleMData.ratingsCount,
 		bkFormGOOG: googleMData.printType,
 		langGOOG: googleMData.language,
-		coverURLGOOG: `${googleMData.imageLinks?.thumbnail}`.replace("http:", "https:"),
-		bookURLGOOG: googleMData.canonicalVolumeLink,
+		coverURLGOOG: `${googleMData.imageLinks?.thumbnail}`?.replace("http:", "https:") || " ",
+		googleURL: googleMData.canonicalVolumeLink,
 		maturityGOOG: googleMData.maturityRating,
-		//bookIDGOOG: 
 		
         // GOODREADS Metadata categories scraped from book page (with better/cleaner data than Google)
 		titleGR: greadsMData.title,
@@ -96,8 +94,12 @@ async function start(params, settings) {
         bkFormGR: greadsMData.bookFormat,
 		langGR: greadsMData.language,
 		coverURLGR: greadsMData.coverURL,
-		bookURLGR: `${greadsMData.goodreadsURL}`.replace(/^app:\/\/obsidian.md/gm, "https://www.goodreads.com"),
-		bookIDGR: greadsMData.goodreadsID,
+		goodreadsURL: `${greadsMData.goodreadsURL}`.replace(/^app:\/\/obsidian.md/gm, "https://www.goodreads.com"),
+		pubYearGR: greadsMData.pubYear,
+		publisherGR: greadsMData.publisher,
+		goodreadsID: greadsMData.goodreadsID,
+		amazonASIN: greadsMData.amazonASIN,
+		amazonURL: `https://www.amazon.com/gp/product/${greadsMData.amazonASIN}`,
 	};
 }
 
@@ -110,7 +112,7 @@ let isbnCheck = str => {
 	return {'isbnQuery':`isbn:${isbnID}`, isbnID}; // return modified query value for Google books API, and extracted ISBN to scrape its specific Goodread's page
 }
 
-let apiGet = async (query) => {
+let fetchAPIdata = async (query) => {
 	let constructURL = new URL(GOOG_API_URL);
 	constructURL.searchParams.set("q", query); // construct full query URL for Google books API
 	const googleQueryURL = decodeURIComponent(constructURL.href); // decodeURI necessary so symbols in URL like ':' are not malformed in http request
@@ -133,7 +135,7 @@ let apiGet = async (query) => {
 	}
 }
 
-let scrapeGoodreads = async (isbn) => {
+let scrapeBookData = async (isbn) => {
 	
 	let goodreadsQueryURL = new URL(GOODREADS_SEARCH_URL);
     goodreadsQueryURL.searchParams.set("q", isbn); 
@@ -153,14 +155,17 @@ let scrapeGoodreads = async (isbn) => {
 	numRatings: $("div#bookMeta meta[itemprop=ratingCount]").content,
 	numReviews: $("div#bookMeta meta[itemprop=reviewCount]").content,
 	coverURL: $("div.bookCoverContainer div.bookCoverPrimary img#coverImage" || "div.bookCoverContainer div.editionCover img").src,
-	abstract: $("div#descriptionContainer div#description span:last-of-type").innerHTML,
+	abstract: $("div#descriptionContainer div#description span:last-of-type").innerHTML ,
 	bookFormat: $("div#details span[itemprop=bookFormat]").textContent,
-    pageCount: $("meta[property='books:page_count']").content || $("div#details span[itemprop=numberOfPages]").textContent,
+    pageCount: $("meta[property='books:page_count']").content || $("div#details span[itemprop=numberOfPages]").textContent.match(/^\d+\b/g)[0],
 	isbn13: $("meta[property='books:isbn']").content || $("div#bookDataBox div.infoBoxRowItem span[itemprop=isbn]").textContent,
 	goodreadsID: $("div.wtrUp #book_id").value,
 	goodreadsURL: $("a.bookLink").href || $("meta[property='og:url']").content,
 	isbn10: $("div#bookDataBox div.clearFloats:nth-child(2) div.infoBoxRowItem").textContent.match(/\b\d{10}\b/g)[0] || "",
-	language: $("div#bookDataBox div.clearFloats:nth-child(3) div.infoBoxRowItem").textContent.trim() || ""
+	language: $("div#bookDataBox div.clearFloats:nth-child(3) div.infoBoxRowItem").textContent.trim() || "",
+	pubYear: $("div#details div.row:nth-child(2)").textContent.match(/(?:Published\n\s*\b)(?:\w)+ (?:\d+\w+) (\d{4})/mi)[1],
+	publisher: $("div#details div.row:nth-child(2)").textContent.match(/(?:by) (\w.*)$/mi)[1],
+	amazonASIN: $("ul.buyButtonBar.left li a.glideButton.buttonBar").dataset.asin || " "
 	}
 	return goodreadsBook;
 }

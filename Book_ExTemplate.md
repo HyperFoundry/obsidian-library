@@ -1,9 +1,10 @@
 ---
 Cover: {{VALUE:coverURLGR}}
-ISBN13: {{VALUE:isbn13GR}}
-ISBN10: {{VALUE:isbn10GR}}
+ISBN13: {{VALUE:isbn13}}
+ISBN10: {{VALUE:isbn10}}
 Pages: {{VALUE:pageCtGR}}
-Goodreads ID: {{VALUE:bookIDGR}}
+Goodreads ID: {{VALUE:goodreadsID}}
+Amazon ASIN: {{VALUE:amazonASIN}}
 ---
 # {{VALUE:fullTitleGOOG}}
 
@@ -15,17 +16,18 @@ Series:: {{VALUE:seriesGR}}
 Genres:: {{VALUE:genresGR}}
 Abstract:: {{VALUE:abstractGR}}
 
-Rating:: {{VALUE:ratingGR}}
-Total Ratings:: {{VALUE:numRatingsGR}}
+Rating:: {{VALUE:avRatingGR}}
+Ratings Count:: {{VALUE:numRatingsGR}}
 Goodreads Reviews:: {{VALUE:numReviewsGR}}
 
-## Book Links: 
-Google URL:: [Google]({{VALUE:bookURLGOOG}})
-Goodreads URL:: [Goodreads]({{VALUE:bookURLGR}})
+## Book Links:
+Amazon:: [{{VALUE:fileName}}]({{VALUE:amazonURL}})
+Goodreads:: [{{VALUE:fileName}}]({{VALUE:goodreadsURL}})
+Google:: [{{VALUE:fileName}}]({{VALUE:googleURL}})
 
 Date Added:: [[{{DATE:gggg-MM-DD}}]]
-#📚books {{VALUE:#to-read,#finished-reading}}
+
+#📚books {{VALUE:#want-to-read,#currently-reading,#read}}
 
 ---
-
-# My Highlights & Notes
+# Highlights & Notes
