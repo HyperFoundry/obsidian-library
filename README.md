@@ -1,4 +1,4 @@
-# QuickAdd script for adding books to your Obsidian vault
+# tempReadme
 
 ## Demo
 **Demo & Screenshots coming soon!**
@@ -116,6 +116,11 @@ Below are the possible fields to use in your book template. Simply write `{{VALU
 - `abstractGOOG`: `[shorter descriptions]` (src: Google)
 - `abstractGR`: `[full, longer descriptions]` (src: Goodreads)
 
+**Book Series** ( a `[[wikilink]]` of the book series w/ book #, total books & URL link to series on Goodreads)
+- `seriesGR`: `[[[The Stormlight Archive]] #1]` the series & book # (if available) (src: Goodreads)
+- `seriesTtl`: `[(10 books)]` total # of books in the series (src: Goodreads)
+- `grSeriesURL`: link to book series on Goodreads
+
 **Rating (value)** (the book's average rating (out of 5 stars) on the respective sites):
 - `avRatingGOOG`: `[4]` (src: Google)
 - `avRatingGR`: `[4.63]` (src: Goodreads) > *recommended*
@@ -161,6 +166,5 @@ Below are the possible fields to use in your book template. Simply write `{{VALU
 **Other**:
 - `publisherGOOG`: `[Tor Books]` the book's publishing company (src: Google)
 - `pubYearGOOG`: `[2010]` the year the book was published (src: Google)
-- `seriesGR`: `[The Stormlight Archive #1]` the series & book # (if available) (src: Goodreads)
 - `maturityGOOG`: `[MATURE] or [NOT_MATURE]` whether the book is rated as mature or not (src: Google)
 
