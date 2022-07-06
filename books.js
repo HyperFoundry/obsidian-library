@@ -67,7 +67,7 @@ async function start(params, settings) {
 
 		goodreadsID: greadsMData.id,
 		googleID: googleMData.id,
-		// amazonASIN: greadsMData.amznASIN,
+		// amznASIN: greadsMData.amznASIN,
 
 		title: googleMData.title,
 		subTitle: googleMData.subtitle ?? ' ',
@@ -75,7 +75,9 @@ async function start(params, settings) {
 		authors: wikiLnkList(greadsMData.authors),
 		abstract: greadsMData.description,
 		genres: wikiLnkList(greadsMData.categories),
-		series: greadsMData.series.slice(1, -1).replace(/^((?=(?<series>\w+))\k<series>\s?)+(?<sNum>#\d+)/, "[[$<series>]] $<sNum>"),
+		series: greadsMData.series
+			.slice(1, -1)
+			.replace(/^((?=(?<series>\w+))\k<series>\s?)+(?<sNum>#\d+)/, '[[$<series>]] $<sNum>'),
 		seriesCount: greadsMData.seriesCount.match(/\([^\)]+\)/)[0],
 		seriesURL: `${greadsMData.seriesURL}`.replace(/^app:\/\/obsidian.md/m, 'https://www.goodreads.com'),
 		isbn13: greadsMData.isbn13,
@@ -91,16 +93,16 @@ async function start(params, settings) {
 			new Date(googleMData.publishedDate)?.getFullYear() ||
 			greadsMData.publishedDate.match(/(?:Published\n\s*\b)(?:\w)+ (?:\d+\w+) (\d{4})/im)[1],
 		publisher: googleMData.publisher || greadsMData.publisher.match(/(?:by) (\w.*)$/im)[1],
-		language: greadsMData.language,
-		maturity: googleMData.maturityRating,
 		format: greadsMData.printType,
 		pageCt: greadsMData.pageCount,
+		language: greadsMData.language,
+		maturity: googleMData.maturityRating,
 
 		coverImgURL: greadsMData.imageLinks,
 		coverImgURLGOOG: `${googleMData.imageLinks?.thumbnail}`?.replace('http:', 'https:') ?? ' ',
 
-		googleURL: googleMData.canonicalVolumeLink,
 		goodreadsURL: greadsMData.canonicalVolumeLink,
+		googleURL: googleMData.canonicalVolumeLink,
 		//amznURL: `${greadsMData.amznASIN !== ' ' && `https://www.amazon.com/gp/product/${greadsMData.amazonASIN}`}`,
 	}
 }
