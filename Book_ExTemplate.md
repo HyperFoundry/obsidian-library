@@ -1,33 +1,32 @@
 ---
-Cover: {{VALUE:coverURLGR}}
+Cover: {{VALUE:coverImgURL}}
 ISBN13: {{VALUE:isbn13}}
 ISBN10: {{VALUE:isbn10}}
-Pages: {{VALUE:pageCtGR}}
+Pages: {{VALUE:pageCt}}
 Goodreads ID: {{VALUE:goodreadsID}}
-Amazon ASIN: {{VALUE:amazonASIN}}
 ---
-# {{VALUE:fullTitleGOOG}}
+# {{VALUE:fullTitle}}
 
-Title:: {{VALUE:titleGOOG}}
-Subtitle:: {{VALUE:subTitleGOOG}}
-Authors:: {{VALUE:authorsGOOG}}
-Publication Year:: {{VALUE:pubYearGOOG}}
-Series:: {{VALUE:seriesGR}}
-Genres:: {{VALUE:genresGR}}
-Abstract:: {{VALUE:abstractGR}}
+Title:: {{VALUE:title}}
+Subtitle:: {{VALUE:subTitle}}
+Authors:: {{VALUE:authors}}
+Publication Year:: {{VALUE:pubYear}}
+Series:: {{VALUE:series}}
+Genres:: {{VALUE:genres}}
+Abstract:: {{VALUE:abstract}}
 
-Rating:: {{VALUE:avRatingGR}}
-Ratings Count:: {{VALUE:numRatingsGR}}
-Goodreads Reviews:: {{VALUE:numReviewsGR}}
+Rating:: {{VALUE:avRating}}
+Ratings Count:: {{VALUE:numRatings}}
+Goodreads Reviews:: {{VALUE:numReviews}}
 
 ## Book Links:
-Amazon:: [{{VALUE:fileName}}]({{VALUE:amazonURL}})
 Goodreads:: [{{VALUE:fileName}}]({{VALUE:goodreadsURL}})
 Google:: [{{VALUE:fileName}}]({{VALUE:googleURL}})
 
 Date Added:: [[{{DATE:gggg-MM-DD}}]]
+My Status:: {{VALUE:#want-to-read,#currently-reading,#read}}
 
-#📚books {{VALUE:#want-to-read,#currently-reading,#read}}
+#📚books 
 
 ---
 # Highlights & Notes

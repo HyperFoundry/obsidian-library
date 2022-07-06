@@ -1,20 +1,21 @@
-# tempReadme
+# Obsidian Library Builder Script (for QuickAdd plugin)
 
-## Demo
-**Demo & Screenshots coming soon!**
+## Demo & Screenshots
+Screenshots coming soon! Please refer to installation guide below
 
 ## Description
-This script allows you to quickly create & add a book note with complete metadata fields to your Obsidian vault using [Quickadd plugin](https://github.com/chhoumann/quickadd) by @chhoumann.
+This script allows you to quickly search for books and build a book tracker/library in Obsidian. For use in conjunction with [Quickadd plugin](https://github.com/chhoumann/quickadd) by @chhoumann, search and create new book notes with a complete selection of metadata fields sourced from [Google Books API](https://developers.google.com/books/) (no API key needed!) and [Goodreads](https://www.goodreads.com/). 
 
-Metadata is sourced from the [Google Books API](https://developers.google.com/books/) (no API key needed!) and [Goodreads](https://www.goodreads.com/). I plan to add additional sources such as: Open Library API, Amazon.com / Kindle, New York Times Books API
+I plan to add additional metadata sources such as: 
+- Open Library API
+- Amazon.com / Kindle
+- New York Times Books API
 
----
-## Disclaimer
-I am new to programming. I welcome any and all feedback. I am not responsible for any damage caused by the use of this script. I have commented the script thoroughly to help others understand it.
-
-The script is inspired by [QuickAdd - Movie And Series Script](https://github.com/chhoumann/quickadd/blob/master/docs/Examples/Macro_MovieAndSeriesScript.md) by @chhoumann and the [QuickAdd - Books Script](https://github.com/Elaws/script_googleBooks_quickAdd) by @Elaws
-
-**Please never run a script that you don't understand. Remember to make regular backups of your Obsidian's vault!**
+I plan to add additional metadata fields & features:
+- pricing details
+- other book editions &  links to other book editions
+- search by: print type (ie. book, ebook, kindle, etc.), publisher, lccn/oclc ID
+- may turn this into a full fledged plugin 
 
 ---
 ## Installation
@@ -40,39 +41,96 @@ The script is inspired by [QuickAdd - Movie And Series Script](https://github.co
 **Great! You can now use the macro to quick create a new book note to add book information to your vault!**
 
 ---
+## Available metadata fields:
+Below are the possible fields to use in your book template. Simply write `{{VALUE:name}}` in your template, and replace `name` by the desired book data. Example field results are shown and the source used (src).
+
+`fileName`: "Book Title - Author Name" (ex: `The Way of Kings - Brandon Sanderson`) (src: Google)
+
+**Titles:** 
+`title`: **Main Title** (the main title of the book) 
+`subTitle`: the subtitle of the book (also known as "title tag")
+`fullTitle`: a full title (combined main title & subtitle)
+
+**Authors** (`[[wiklink]]` list of the book's authors separated by commas):
+- `authors`: `[[author 1]]`, `[[author 2]]`, `[[author 3]]` 
+
+**Abstract** (a brief description of the book, like the blurbs you would find on a book jacket) (src: Goodreads) :
+- `abstract`: `full, long descriptions` 
+- shorter descriptions are also available from google using `googleMData.description`
+
+**Genres** (`[[wiklink]]` list of the book's top 5 genres separated by commas) (src: Goodreads):
+- `genres`: `[[genre 1]]`, `[[genre 2]]`, `[[genre 3]]`, `[[genre 4]]`, `[[genre 5]]`
+
+**Series** (`[[wikilink]]` of the book series w/book #, total books & URL link to series on Goodreads, if available)
+- `series`: `[[The Stormlight Archive]] #1` the series & book #
+- `seriesCount`: `(10 books)` total # of books in the series
+- `seriesURL`: link to book series on Goodreads
+
+**Rating (value)** (book's average rating (out of 5 stars), total # of ratings, and # of written reviews for the books on Goodreads)
+- `avRating`: `4.63`
+- `numRatings`: `3728327`
+- `numReviews`: `26181`
+- ratings from Google Books API also available, but does not have good data. Accessible as: `avRatingGOOG`, `numRatingsGOOG`
+
+**Publication Info**
+- `pubYear`: `2010` the year the book was published
+- `publisher`: `Tor Books` the book's publishing company
+- `format`: `Hardcover, Paperback, Audiobook, Kindle Edition, Ebook, Magazine` the format of this particular book
+- `pageCt`: `823` the total # pages in the book's print version
+- `language`: `English` language of the specified book edition
+- `maturity`: `MATURE` or `NOT_MATURE` whether the book is rated as mature or not
+
+**Book Cover Image** (the URL address of the book's cover image):
+- `coverImgURL`: `https://i.gr-assets.com/images/S/compressed.photo.goodreads.com/books/1388184640l/7235533.jpg`
+- lower quality cover image URLs available from Google Books API: `coverImgURLGOOG`
+
+**Book page URL** (the URL address to the book's main page on the respective sites):
+- `goodreadsURL`: `https://www.goodreads.com/book/show/7235533-the-way-of-kings`
+- `googleURL`: `https://books.google.com/books/about/The_Way_of_Kings.html?hl=&id=kIjwwAEACAAJ`
+- `amznURL`: `https://www.amazon.com/gp/product/B00540QR7Q`
+
+**Identifiers / Unique IDs** (ISBN13, ISBN10, or the book's unique identifier for each respective site):
+- `isbn13`: `9780765326355`
+- `isbn10`: `0765326353`
+- `goodreadsID`: `7235533`
+- `googleID`: `kIjwwAEACAAJ`
+- `amznASIN`: `B00540QR7Q`
+
+---
 ## Book page template (Example):
 ```markdown
 ---
-Cover: {{VALUE:coverURLGR}}
+Cover: {{VALUE:coverImgURL}}
 ISBN13: {{VALUE:isbn13}}
 ISBN10: {{VALUE:isbn10}}
-Pages: {{VALUE:pageCtGR}}
+Pages: {{VALUE:pageCt}}
 Goodreads ID: {{VALUE:goodreadsID}}
-Amazon ASIN: {{VALUE:amazonASIN}}
 
 ---
 
-# {{VALUE:fullTitleGOOG}}
+# {{VALUE:fullTitle}}
 
-Title:: {{VALUE:titleGOOG}}
-Subtitle:: {{VALUE:subTitleGOOG}}
-Authors:: {{VALUE:authorsGOOG}}
-Publication Year:: {{VALUE:pubYearGOOG}}
-Series:: {{VALUE:seriesGR}}
-Genres:: {{VALUE:genresGR}}
-Abstract:: {{VALUE:abstractGR}}
+Title:: {{VALUE:title}}
+Subtitle:: {{VALUE:subTitle}}
+Authors:: {{VALUE:authors}}
+Publication Year:: {{VALUE:pubYear}}
+Series:: {{VALUE:series}}
+Genres:: {{VALUE:genres}}
+Abstract:: {{VALUE:abstract}}
 
-Rating:: {{VALUE:avRatingGR}}
-Total Ratings:: {{VALUE:numRatingsGR}}
-Goodreads Reviews:: {{VALUE:numReviewsGR}}
+Rating:: {{VALUE:avRating}}
+Ratings Count:: {{VALUE:numRatings}}
+Goodreads Reviews:: {{VALUE:numReviews}}
 
 ## Book Links:
-Amazon URL:: [Amazon]({{VALUE:amazonURL}})
-Goodreads URL:: [Goodreads]({{VALUE:bookURLGR}})
-Google URL:: [Google]({{VALUE:bookURLGOOG}})
+Goodreads URL:: [Goodreads]({{VALUE:goodreadsURL}})
+Amazon URL:: [Amazon]({{VALUE:amznURL}})
+Google URL:: [Google]({{VALUE:googleURL}})
 
 Date Added:: [[{{DATE:gggg-MM-DD}}]]
-#📚books {{VALUE:#want-to-read,#currently-reading,#read}}
+My Status:: {{VALUE:#want-to-read,#currently-reading,#read}}
+
+#📚books
 
 ---
 
@@ -87,84 +145,17 @@ TABLE WITHOUT ID
 	("![](" + Cover + ")") AS Cover,
 	Title AS Title,
 	"by " + Authors AS Authors,
-	Genre AS Genre,
+	Genres AS Genres,
 	"Rating: " + Rating AS "Rating",
 	"Date Added: " + Date Added AS "Date Added"
-FROM #to-read AND "Library" AND #📚books AND -"_templates"
+FROM #want-to-read AND "Library" AND #📚books AND -"_templates"
 WHERE Cover != null
 ```
+
 ---
-## Metadata fields available for your book template:
-Below are the possible fields to use in your book template. Simply write `{{VALUE:name}}` in your template, and replace `name` by the desired book data. Example field results are presented in [ ] and the source (src) of the field is presented in ( ).
+## Disclaimer
+I am new to programming. I welcome any and all feedback. I am not responsible for any damage caused by the use of this script. I have commented the script thoroughly to help others understand it.
 
-**Main Title** (the main title of the book):
-- `titleGOOG`: (src: Google)
-- `titleGR`: (src: Goodreads)
+The script is inspired by [QuickAdd - Movie And Series Script](https://github.com/chhoumann/quickadd/blob/master/docs/Examples/Macro_MovieAndSeriesScript.md) by @chhoumann and the [QuickAdd - Books Script](https://github.com/Elaws/script_googleBooks_quickAdd) by @Elaws
 
-- `subTitleGOOG`: the subtitle of the book (also known as "title tag") (src: Google)
-- `fullTitleGOOG`: a full title (combined main title & subtitle) (src: Google)
-
-**Authors** (a `[[wiklink]]` list of the book's authors):
-- `authorsGOOG`: `[[author 1]], [[author 2]], [[author 3]]` (src: Google) 
-- `authorsGR`: `[[author 1]], [[author 2]], [[author 3]]` (src: Goodreads)  
-
-**Genres** (a `[[wiklink]]` list of the book's top 4 genres):
-- `genresGOOG`: `[[genre 1]], [[genre 2]], [[genre 3]], [[genre 4]]` (src: Google)
-- `genresGR`: `[[genre 1]], [[genre 2]], [[genre 3]], [[genre 4]]`  (src: Goodreads) > *recommended*
-
-**Abstract** (a brief description of the book, like the blurbs you would find on a book jacket):
-- `abstractGOOG`: `[shorter descriptions]` (src: Google)
-- `abstractGR`: `[full, longer descriptions]` (src: Goodreads)
-
-**Book Series** ( a `[[wikilink]]` of the book series w/ book #, total books & URL link to series on Goodreads)
-- `seriesGR`: `[[[The Stormlight Archive]] #1]` the series & book # (if available) (src: Goodreads)
-- `seriesTtl`: `[(10 books)]` total # of books in the series (src: Goodreads)
-- `grSeriesURL`: link to book series on Goodreads
-
-**Rating (value)** (the book's average rating (out of 5 stars) on the respective sites):
-- `avRatingGOOG`: `[4]` (src: Google)
-- `avRatingGR`: `[4.63]` (src: Goodreads) > *recommended*
-
-**Number of Ratings** (the # of ratings for the average rating value):
-- `numRatingsGOOG`: `[1123]` (src: Google)
-- `numRatingsGR`: `[3728327]` (src: Goodreads) > *recommended*
-
-- `numReviewsGR`: `[26181]` # of written reviews for the books on Goodreads
-
-**Book Cover Image** (the URL address of the book's cover image from the respective sites):
-- `coverURLGOOG`: `[http://books.google.com/books/content?id=kIjwwAEACAAJ&printsec=frontcover&img=1&zoom=1&source=gbs_api]` (src: Google)
-- `coverURLGR`: `[https://i.gr-assets.com/images/S/compressed.photo.goodreads.com/books/1388184640l/7235533.jpg]` (src: Goodreads) > *recommended* (higher quality)
-
-**Book URL** (the URL address to the book's main page on the respective sites):
-- `googleURL`: `[https://books.google.com/books/about/The_Way_of_Kings.html?hl=&id=kIjwwAEACAAJ]`(src: Google)
-- `goodreadsURL`: `[https://www.goodreads.com/book/show/7235533-the-way-of-kings]` (src: Goodreads)
-- `amazonURL`: `[https://www.amazon.com/gp/product/B00540QR7Q]` (src: Goodreads)
-
-**Book Format** (the format of the particular book you selected):
-- `bkFormGOOG`: `[BOOK] or [MAGAZINE]`(src: Google)
-- `bkFormGR`: `[hardcover, paperback, audiobook, kindle edition, ebook, etc.]` (src: Goodreads) > *recommended*
-
-**Page Count** (the total # pages in the book's print version):
-- `pageCtGOOG`: `[1008]` (src: Google)
-- `pageCtGR`: `[1008]`(src: Goodreads)
-
-**Language** (the language of the book you selected):
-- `langGOOG`: `[en]` (src: Google)
-- `langGR`: `[English]` (src: Goodreads)
-
-**ISBN** (ISBN10 & ISBN13 of the book):
-- `isbn13`: `[9780765326355]` (src: Google)
-- `isbn10`: `[0765326353]` (src: Google)
-- `isbn13GR`: `[9780765326355]` (src: Goodreads)
-- `isbn10GR`: `[0765326353]` (src: Goodreads)
-
-**Unique IDs** (the book's unique identifier for each respective site):
-- `googleID`: `[kIjwwAEACAAJ]` (src: Google)
-- `goodreadsID`: `[7235533]` (src: Goodreads)
-- `amazonASIN`: `[B00540QR7Q]` (src: Goodreads)
-
-**Other**:
-- `publisherGOOG`: `[Tor Books]` the book's publishing company (src: Google)
-- `pubYearGOOG`: `[2010]` the year the book was published (src: Google)
-- `maturityGOOG`: `[MATURE] or [NOT_MATURE]` whether the book is rated as mature or not (src: Google)
-
+**Please never run a script that you don't understand. Remember to make regular backups of your Obsidian's vault!**
