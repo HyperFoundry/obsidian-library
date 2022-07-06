@@ -34,17 +34,18 @@ async function start(params, settings) {
 	query = isbnCheck(query) // check if user query has ISBN identifying info
 	if (query.isbnID) {
 		// if there is ISBN info, we will query Google Books API & scrape the book's Goodreads page at the same time
-		[googleMData, greadsMData] = await Promise.allSettled([reqAPI(query.isbnQuery), scrapeBookData(query.isbnID)])
+		[googleMData, greadsMData] = await Promise.allSettled([requestAPIdata(query.isbnQuery), scrapeBookData(query.isbnID)])
 
+		// check if fetch was successful, then destructure object to the values we want
 		googleMData =
-			googleMData.status === 'fulfilled' && (({ id, volumeInfo }) => ({ id, ...volumeInfo }))(googleMData.value[0]) // checks if fetch was successful, then destructures object to the values we want
+			googleMData.status === 'fulfilled' && (({ id, volumeInfo }) => ({ id, ...volumeInfo }))(googleMData.value[0])
 		greadsMData = greadsMData.status === 'fulfilled' && greadsMData.value
 	} else {
-		const results = await reqAPI(query) // user query without ISBN is sent to Google Books API search
+		const results = await requestAPIdata(query) // user query without ISBN is sent to Google Books API search
 		// deduplicate results w/ISBN13 as comparison key
 		const uniqueResults = [
 			...new Map(
-				results.map(({ id, volumeInfo }) => [+volumeInfo.industryIdentifiers.find(n => n.type === 'ISBN_13').identifier, { id, ...volumeInfo }])
+				results.map(({ id, volumeInfo }) => [+volumeInfo.industryIdentifiers.find(n => n.type === 'ISBN_13')?.identifier, { id, ...volumeInfo }])
 			).values(),
 		]
 		//prompt user with list of unique results
@@ -57,6 +58,9 @@ async function start(params, settings) {
 		const isbn10 = googleMData.industryIdentifiers.find(n => n.type === 'ISBN_10')?.identifier
 		greadsMData = await scrapeBookData(isbn13 || isbn10) // scrape the corresponding Goodreads books page
 	}
+
+	console.log({googleMData})
+	console.log({greadsMData})
 
 	QuickAdd.variables = {
 		fileName: `${googleMData.title} - ${googleMData.authors}`,
@@ -71,11 +75,11 @@ async function start(params, settings) {
 		authors: wikiLnkList(greadsMData.authors),
 		abstract: greadsMData.description,
 		genres: wikiLnkList(greadsMData.categories),
-		series: greadsMData.series.slice(1, -1),
+		series: greadsMData.series.slice(1, -1).replace(/^((?=(?<series>\w+))\k<series>\s?)+(?<sNum>#\d+)/, "[[$<series>]] $<sNum>"),
 		seriesCount: greadsMData.seriesCount.match(/\([^\)]+\)/)[0],
-		//`[[${greadsMData.series[0]}]] ${greadsMData.series[1]} [${greadsMData.seriesCount}](${greadsMData.seriesURL})`,
+		seriesURL: `${greadsMData.seriesURL}`.replace(/^app:\/\/obsidian.md/m, 'https://www.goodreads.com'),
 		isbn13: greadsMData.isbn13,
-		isbn10: greadsMData.isbn10.match(/\b\d{10}\b/g)[0],
+		isbn10: greadsMData.isbn10.match(/\b\d{10}\b/)[0],
 
 		avRating: greadsMData.ratingValue,
 		numRatings: greadsMData.ratingCount,
@@ -83,15 +87,17 @@ async function start(params, settings) {
 		avRatingGOOG: googleMData.averageRating,
 		numRatingsGOOG: googleMData.ratingsCount,
 
-		pubYear: new Date(googleMData.publishedDate)?.getFullYear() ?? ' ',
-		publisher: googleMData.publisher,
+		pubYear:
+			new Date(googleMData.publishedDate)?.getFullYear() ||
+			greadsMData.publishedDate.match(/(?:Published\n\s*\b)(?:\w)+ (?:\d+\w+) (\d{4})/im)[1],
+		publisher: googleMData.publisher || greadsMData.publisher.match(/(?:by) (\w.*)$/im)[1],
 		language: greadsMData.language,
 		maturity: googleMData.maturityRating,
 		format: greadsMData.printType,
 		pageCt: greadsMData.pageCount,
 
-		coverURL: greadsMData.imageLinks,
-		coverURLGOOG: `${googleMData.imageLinks?.thumbnail}`?.replace('http:', 'https:') ?? ' ',
+		coverImgURL: greadsMData.imageLinks,
+		coverImgURLGOOG: `${googleMData.imageLinks?.thumbnail}`?.replace('http:', 'https:') ?? ' ',
 
 		googleURL: googleMData.canonicalVolumeLink,
 		goodreadsURL: greadsMData.canonicalVolumeLink,
@@ -108,7 +114,7 @@ let isbnCheck = str => {
 	return { isbnQuery: `isbn:${isbnID}`, isbnID } // return modified query value for Google books API, and extracted ISBN to scrape its specific Goodread's page
 }
 
-let reqAPI = async query => {
+let requestAPIdata = async query => {
 	let constructURL = new URL(GOOG_API_URL)
 	constructURL.searchParams.set('q', query) // construct full query URL for Google books API
 	const googleQueryURL = decodeURIComponent(constructURL.href) // decodeURI necessary so symbols in URL like ':' are not malformed in http request
@@ -138,45 +144,44 @@ let scrapeBookData = async isbn => {
 
 	const bookPage = await request({ url: goodreadsQueryURL.href })
 	const document = new DOMParser().parseFromString(bookPage, 'text/html') // turn requested webpage into DOM tree
-	const $ = (selector, attr, scope = document) => scope.querySelector(selector)[attr].trim()
+	const $ = (element, attr, scope = document) => scope.querySelector(element)[attr].trim()
 	const $$ = (selector, attr, scope = document) => new Set(Array.from(scope.querySelectorAll(selector), x => x[attr]))
 
 	const grCSSelectors = [
-		{ field: 'id', sel: '#book_id', val: 'value' },
-		{ field: 'title', sel: 'h1#bookTitle', val: 'innerText' },
-		{ field: 'authors', sel: '#bookAuthors a.authorName span[itemprop=name]', qs: $$ },
-		{ field: 'description', sel: '#descriptionContainer #description span:last-of-type', val: 'innerHTML' },
-		{ field: 'isbn13', sel: "meta[property='books:isbn']", val: 'content' },
-		{ field: 'isbn10', sel: '#bookDataBox .clearFloats:nth-child(2) .infoBoxRowItem' },
+		{ field: 'id', el: '#book_id', val: 'value' },
+		{ field: 'title', el: 'h1#bookTitle', val: 'innerText' },
+		{ field: 'authors', el: '#bookAuthors a.authorName span[itemprop=name]', qs: $$ },
+		{ field: 'description', el: '#descriptionContainer #description span:last-of-type', val: 'innerHTML' },
+		{ field: 'isbn13', el: "meta[property='books:isbn']", val: 'content' },
+		{ field: 'isbn10', el: '#bookDataBox .clearFloats:nth-child(2) .infoBoxRowItem' },
 		{
 			field: 'categories',
-			sel: '.bigBoxContent.containerWithHeaderContent .elementList:nth-child(-n+5) a.actionLinkLite.bookPageGenreLink', // bookPageGenreLink:last-of-type
+			el: '.bigBoxContent.containerWithHeaderContent .elementList:nth-child(-n+5) a.actionLinkLite.bookPageGenreLink', // bookPageGenreLink:last-of-type
 			qs: $$,
 		},
-		{ field: 'series', sel: 'h2#bookSeries', val: 'innerText' },
-		{ field: 'seriesCount', sel: '.seriesList .bigBoxContent.containerWithHeaderContent', val: 'innerText' },
-		{ field: 'seriesURL', sel: '.seriesList a', val: 'href' },
-		{ field: 'ratingValue', sel: '#bookMeta span[itemprop=ratingValue]' },
-		{ field: 'ratingCount', sel: '#bookMeta meta[itemprop=ratingCount]', val: 'content' },
-		{ field: 'reviewCount', sel: '#bookMeta meta[itemprop=reviewCount]', val: 'content' },
-		{ field: 'imageLinks', sel: '.bookCoverContainer img', val: 'src' },
-		{ field: 'publishedDate', sel: '#details .row:nth-child(2)' },
-		{ field: 'publisher', sel: '#details .row:nth-child(2)' },
-		{ field: 'language', sel: '#bookDataBox .clearFloats:nth-child(3) .infoBoxRowItem' },
-		{ field: 'printType', sel: '#details span[itemprop=bookFormat]' },
-		{ field: 'pageCount', sel: "meta[property='books:page_count']", val: 'content' },
-		{ field: 'canonicalVolumeLink', sel: "link[rel='canonical']", val: 'href' },
-		//{ field: 'amznASIN', sel: 'ul.buyButtonBar.left li a.glideButton.buttonBar', val:'dataset', qs: $$ },
-		//{ field: 'amznURL', sel: 'ul.buyButtonBar.left a.glideButton.buttonBar', val: 'dataset.amazonUrl'},
+		{ field: 'series', el: 'h2#bookSeries', val: 'innerText' }, //selector for h2 element whose ID-typed attribute has the value "bookSeries"
+		{ field: 'seriesCount', el: '.seriesList .bigBoxContent.containerWithHeaderContent', val: 'innerText' },
+		{ field: 'seriesURL', el: '.seriesList a', val: 'href' },
+		{ field: 'ratingValue', el: '#bookMeta span[itemprop=ratingValue]' },
+		{ field: 'ratingCount', el: '#bookMeta meta[itemprop=ratingCount]', val: 'content' },
+		{ field: 'reviewCount', el: '#bookMeta meta[itemprop=reviewCount]', val: 'content' },
+		{ field: 'imageLinks', el: '.bookCoverContainer img', val: 'src' },
+		{ field: 'publishedDate', el: '#details .row:nth-child(2)' },
+		{ field: 'publisher', el: '#details .row:nth-child(2)' },
+		{ field: 'language', el: '#bookDataBox .clearFloats:nth-child(3) .infoBoxRowItem' },
+		{ field: 'printType', el: '#details span[itemprop=bookFormat]' },
+		{ field: 'pageCount', el: "meta[property='books:page_count']", val: 'content' },
+		{ field: 'canonicalVolumeLink', el: "link[rel='canonical']", val: 'href' },
+		//{ field: 'amznASIN', el: 'ul.buyButtonBar.left li a.glideButton.buttonBar', val: 'dataset' }, //dataset.asin
+		//{ field: 'amznURL', el: 'ul.buyButtonBar.left a.glideButton.buttonBar', val: 'dataset.amazonUrl'},
 	]
+
 	const bookMData = grCSSelectors.reduce(
-		(acc, { field, sel, val = 'textContent', qs = $, fieldVal = qs(sel, val) } = {}) => {
+		(acc, { field, el, val = 'textContent', qs = $, fieldVal = qs(el, val) } = {}) => {
 			fieldVal && (acc[field] = fieldVal)
 			return acc
-		},
-		{}
+		},{}
 	)
-	console.log({bookMData})
 	return bookMData
 }
 
@@ -192,5 +197,5 @@ let formatSuggestions = resultItem => {
 let wikiLnkList = list => {
 	if (list?.length === 0) return ' '
 	if (list?.length === 1) return `[[${list[0]}]]`
-	return Array.from(list, i => `[[${i.trim()}]]`).join(', ') ?? ' '
+	return Array.from(list, i => `[[${i.trim()}]]`)?.join(', ') ?? ' '
 }
