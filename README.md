@@ -44,41 +44,42 @@ I plan to add additional metadata fields & features:
 ## Available metadata fields:
 Below are the possible fields to use in your book template. Simply write `{{VALUE:name}}` in your template, and replace `name` by the desired book data. Example field results are shown and the source used (src).
 
-`fileName`: "Book Title - Author Name" (ex: `The Way of Kings - Brandon Sanderson`) (src: Google)
+- `fileName`: "Book Title - Author Name" (ex: `The Way of Kings - Brandon Sanderson`) (src: Google)
+
 
 **Titles:** 
-`title`: **Main Title** (the main title of the book) 
-`subTitle`: the subtitle of the book (also known as "title tag")
-`fullTitle`: a full title (combined main title & subtitle)
+- `title`: **Main Title** (the main title of the book) 
+- `subTitle`: the subtitle of the book (also known as "title tag")
+- `fullTitle`: a full title (combined main title & subtitle)
 
 **Authors** (`[[wiklink]]` list of the book's authors separated by commas):
 - `authors`: `[[author 1]]`, `[[author 2]]`, `[[author 3]]` 
 
 **Abstract** (a brief description of the book, like the blurbs you would find on a book jacket) (src: Goodreads) :
-- `abstract`: `full, long descriptions` 
+- `abstract`: full descriptions 
 - shorter descriptions are also available from google using `googleMData.description`
 
 **Genres** (`[[wiklink]]` list of the book's top 5 genres separated by commas) (src: Goodreads):
 - `genres`: `[[genre 1]]`, `[[genre 2]]`, `[[genre 3]]`, `[[genre 4]]`, `[[genre 5]]`
 
 **Series** (`[[wikilink]]` of the book series w/book #, total books & URL link to series on Goodreads, if available)
-- `series`: `[[The Stormlight Archive]] #1` the series & book #
-- `seriesCount`: `(10 books)` total # of books in the series
-- `seriesURL`: link to book series on Goodreads
+- `series`: `[[The Stormlight Archive]] #1` (the series & book #)
+- `seriesCount`: `(10 books)` (total # of books in the series)
+- `seriesURL`: (link to book series on Goodreads)
 
 **Rating (value)** (book's average rating (out of 5 stars), total # of ratings, and # of written reviews for the books on Goodreads)
 - `avRating`: `4.63`
 - `numRatings`: `3728327`
 - `numReviews`: `26181`
-- ratings from Google Books API also available, but does not have good data. Accessible as: `avRatingGOOG`, `numRatingsGOOG`
+- rating info from Google Books API available as: `avRatingGOOG`, `numRatingsGOOG`, but does not provide good data
 
 **Publication Info**
-- `pubYear`: `2010` the year the book was published
-- `publisher`: `Tor Books` the book's publishing company
-- `format`: `Hardcover, Paperback, Audiobook, Kindle Edition, Ebook, Magazine` the format of this particular book
-- `pageCt`: `823` the total # pages in the book's print version
-- `language`: `English` language of the specified book edition
-- `maturity`: `MATURE` or `NOT_MATURE` whether the book is rated as mature or not
+- `pubYear`: `2010` (the year the book was published)
+- `publisher`: `Tor Books` (the book's publishing company for the selection book edition)
+- `format`: `Hardcover, Paperback, Audiobook, Kindle Edition, Ebook, Magazine` (the format of this book edition)
+- `pageCt`: `823` (the total # pages in the book's print version)
+- `language`: `English` (language of this book edition)
+- `maturity`: `MATURE` or `NOT_MATURE` (whether the book is rated as mature or not)
 
 **Book Cover Image** (the URL address of the book's cover image):
 - `coverImgURL`: `https://i.gr-assets.com/images/S/compressed.photo.goodreads.com/books/1388184640l/7235533.jpg`
@@ -97,13 +98,15 @@ Below are the possible fields to use in your book template. Simply write `{{VALU
 - `amznASIN`: `B00540QR7Q`
 
 ---
-## Book page template (Example):
+## Book page template (example):
 ```markdown
 ---
 Cover: {{VALUE:coverImgURL}}
 ISBN13: {{VALUE:isbn13}}
 ISBN10: {{VALUE:isbn10}}
 Pages: {{VALUE:pageCt}}
+Publication Year: {{VALUE:pubYear}}
+Publisher: {{VALUE:publisher}}
 Goodreads ID: {{VALUE:goodreadsID}}
 
 ---
@@ -113,7 +116,6 @@ Goodreads ID: {{VALUE:goodreadsID}}
 Title:: {{VALUE:title}}
 Subtitle:: {{VALUE:subTitle}}
 Authors:: {{VALUE:authors}}
-Publication Year:: {{VALUE:pubYear}}
 Series:: {{VALUE:series}}
 Genres:: {{VALUE:genres}}
 Abstract:: {{VALUE:abstract}}
@@ -138,7 +140,7 @@ My Status:: {{VALUE:#want-to-read,#currently-reading,#read}}
 
 ```
 
-## Dataview query for Gallery rendering (Example):
+## DataView query to render a gallery of your books (example):
 ```
 ```dataview
 TABLE WITHOUT ID 
@@ -151,6 +153,7 @@ TABLE WITHOUT ID
 FROM #want-to-read AND "Library" AND #📚books AND -"_templates"
 WHERE Cover != null
 ```
+
 
 ---
 ## Disclaimer
