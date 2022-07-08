@@ -19,46 +19,52 @@ let Settings
 async function start(params, settings) {
 	QuickAdd = params
 	Settings = settings
-	// prompt for search terms; can be book title, author, ISBN, etc.
-	var query = await QuickAdd.quickAddApi.inputPrompt('📖 Search by any keywords (title, author, ISBN, etc.): ')
+	// single line prompt for user query; can be book title, author, ISBN, etc.
+	let query = await QuickAdd.quickAddApi.inputPrompt('📖 Search by any keywords (title, author, ISBN, etc.): ')
+	query &&= query.trim().replace(/[\\,#%&!?\{\}\/*<>`$\'\":@.*]/g, '') //use REGEX to clean up user entry
+	// throw error if user does not enter a query
 	if (!query) {
 		notice('❗No query entered')
 		throw new Error('No query entered')
 	}
 
-	query = query.trim().replace(/[\\,#%&!?\{\}\/*<>`$\'\":@.*]/g, '') // clean up user entry with REGEX
+	let googleMData, greadsMData // declare object variables where we will store out book metadata from our two sources
 
-	let googleMData
-	let greadsMData
+	// check if user query contains ISBN
+	if (Number.isInteger((query = isbnCheck(query)))) {
+		// if ISBN is extracted from user query, we can retrieve metadata for the specific book from our two sources in parallel. Immediately destructure the promises returned
+		;[googleMData, greadsMData] = await Promise.allSettled([requestAPIdata(`isbn:${query}`), parseBookLink(query)])
 
-	query = isbnCheck(query) // check if user query has ISBN identifying info
-	if (query.isbnID) {
-		// if there is ISBN info, we will query Google Books API & scrape the book's Goodreads page at the same time
-		[googleMData, greadsMData] = await Promise.allSettled([requestAPIdata(query.isbnQuery), parseBookLink(query.isbnID)])
-
-		// check if fetch was successful, then destructure object to the values we want
+		// if promises were successful, use destructuring & spread operator to save only the metadata we want back into the main metadata containers/objects
 		googleMData =
 			googleMData.status === 'fulfilled' && (({ id, volumeInfo }) => ({ id, ...volumeInfo }))(googleMData.value[0])
 		greadsMData = greadsMData.status === 'fulfilled' && greadsMData.value
 	} else {
-		const results = await requestAPIdata(query) // user query without ISBN is sent to Google Books API search
-		// deduplicate results w/ISBN13 as comparison key
+		// if user query contains no ISBN, search using the Google Books API first
+		const results = await requestAPIdata(query)
+		// results returned from Google Books API is deduplicated by comparing their ISBN13
 		const uniqueResults = [
 			...new Map(
-				results.map(({ id, volumeInfo }) => [+volumeInfo.industryIdentifiers.find(n => n.type === 'ISBN_13')?.identifier, { id, ...volumeInfo }])
+				results.map(({ id, volumeInfo }) => [
+					+volumeInfo.industryIdentifiers.find(n => n.type === 'ISBN_13')?.identifier,
+					{ id, ...volumeInfo },
+				])
 			).values(),
 		]
-		//prompt user with list of unique results
+		//prompt user with list of unique book results to choose from
 		googleMData = await QuickAdd.quickAddApi.suggester(uniqueResults.map(formatSuggestions), uniqueResults)
+		// if no book is selected, throw an error
 		if (!googleMData) {
 			notice('❗No choice selected')
 			throw new Error('No choice selected')
 		}
-		const isbn13 = googleMData.industryIdentifiers.find(n => n.type === 'ISBN_13')?.identifier // extract ISBNs from Google Book metadata
+		// extract the ISBNs from the selected book to find the book's page on Goodreads
+		const isbn13 = googleMData.industryIdentifiers.find(n => n.type === 'ISBN_13')?.identifier
 		const isbn10 = googleMData.industryIdentifiers.find(n => n.type === 'ISBN_10')?.identifier
-		greadsMData = await parseBookLink(isbn13 || isbn10) // scrape the corresponding Goodreads books page
+		greadsMData = await parseBookLink(isbn13 || isbn10)
 	}
 
+	// assign our collected metadata to user friendly variables for use in their personalized templates
 	QuickAdd.variables = {
 		fileName: `${googleMData.title} - ${googleMData.authors}`,
 
@@ -109,17 +115,19 @@ async function start(params, settings) {
 		// amznASIN: greadsMData.amznASIN,
 
 		// Personal Fields
-		myStatus: await params.quickAddApi.suggester(["To Read", "Completed Reading", "Currently Reading"], ["#toRead", "#read", "#reading"]),
+		myStatus: await params.quickAddApi.suggester(
+			['To Read', 'Completed Reading', 'Currently Reading'],
+			['#toRead', '#read', '#reading']
+		),
 	}
 }
 
 let isbnCheck = str => {
 	const ISBN_PREFIX_REGEX = /(?:\bISBN[- ]?(1[03])?[-: ]*)?/gi // REGEX; ISBN identifier prefix
-	const ISBN_REGEX = /(97[89])?[\dX]{10}$|(?=(?:(\d+?[- ]){3,4}))([\dX](?:[- ])*?){10}(([\dX](?:[- ])*?){3})?$/g // REGEX; look for ISBN-10/13 taking into account spaces or dashes
+	const ISBN_REGEX = /(97[89])?[\dX]{10}$|(?=(?:(\d+?[- ]){3,4}))([\dX](?:[- ])*?){10}(([\dX](?:[- ])*?){3})?$/g // REGEX; for ISBN-10/13 taking into account spaces or dashes
 
 	if (!ISBN_PREFIX_REGEX.test(str) || !ISBN_REGEX.test(str)) return str // if no REGEX matches, return the original query
-	let isbnID = str.match(ISBN_REGEX)[0].replaceAll(/[- ]/g, '') // else, extract ISBN using the regex & clean up so its only numbers
-	return { isbnQuery: `isbn:${isbnID}`, isbnID } // return modified query value for Google books API, and extracted ISBN to scrape its specific Goodread's page
+	return +str.match(ISBN_REGEX)[0].replaceAll(/[- ]/g, '') // else, use REGEX to extract ISBN and remove dashes/spaces, and return
 }
 
 let requestAPIdata = async query => {
@@ -127,12 +135,13 @@ let requestAPIdata = async query => {
 	constructURL.searchParams.set('q', query) // construct full query URL for Google books API
 	const googleQueryURL = decodeURIComponent(constructURL.href) // decodeURI necessary so symbols in URL like ':' are not malformed in http request
 
+	// request a URL using HTTP/HTTPS, without any CORS restrictions (similar to fetch())
 	try {
 		const response = await request({
 			url: googleQueryURL,
-			cache: 'no-cache'
+			cache: 'no-cache',
 		})
-		const index = await JSON.parse(response)
+		const index = await JSON.parse(response) // this method turns the json reply string into an object
 		return await index.items
 	} catch (error) {
 		if (index.totalItems === 0) {
@@ -152,10 +161,11 @@ let parseBookLink = async isbn => {
 
 	const bookPage = await request({ url: goodreadsQueryURL.href })
 	const document = new DOMParser().parseFromString(bookPage, 'text/html') // turn requested webpage into DOM tree
-	const $ = (element, attr, scope = document) => scope.querySelector(element)[attr].trim()
-	const $$ = (selector, attr, scope = document) => new Set(Array.from(scope.querySelectorAll(selector), x => x[attr]))
+	const $ = (selectors, attr) => document.querySelector(selectors)[attr].trim() // create shorthands for querySelector methods used to traverse DOM tree (mimics jQuery)
+	const $$ = (selectors, attr) => new Set(Array.from(document.querySelectorAll(selectors), x => x[attr]))
 
-	const grCSSelectors = [
+	// array of metadata fields w/associated CSS selectors for Goodreads
+	const goodreadsCSSelectors = [
 		{ field: 'id', el: '#book_id', val: 'value' },
 		{ field: 'title', el: 'h1#bookTitle', val: 'innerText' },
 		{ field: 'authors', el: '#bookAuthors a.authorName span[itemprop=name]', qs: $$ },
@@ -184,24 +194,25 @@ let parseBookLink = async isbn => {
 		//{ field: 'amznURL', el: 'ul.buyButtonBar.left a.glideButton.buttonBar', val: 'dataset.amazonUrl'},
 	]
 
-	const bookMData = grCSSelectors.reduce(
+	// use the array 'reduce' method to loop through the CSS selectors array and assign results to a book metadata object
+	const bookMData = goodreadsCSSelectors.reduce(
 		(acc, { field, el, val = 'textContent', qs = $, fieldVal = qs(el, val) } = {}) => {
 			fieldVal && (acc[field] = fieldVal)
 			return acc
-		},{}
+		},
+		{}
 	)
 	return bookMData
 }
 
-// Suggestion prompt shows '📚' prefix if a book cover image is available or (📵) if not
-// Also displays: Book title, author, publication year, and ISBNs
+// Formats string for our suggestion prompt; shows '📚' prefix if a book cover image is available or (📵) if not
 let formatSuggestions = resultItem => {
 	return `${resultItem.imageLinks ? '📚' : '📵'} ${resultItem.title} - ${resultItem.authors[0]} (${new Date(
 		resultItem.publishedDate
 	).getFullYear()})`
 }
 
-// convert a list into a wikilinks list
+// convert a list into a wikilinks list separated by commas
 let wikiLnkList = list => {
 	if (list?.length === 0) return ' '
 	if (list?.length === 1) return `[[${list[0]}]]`
