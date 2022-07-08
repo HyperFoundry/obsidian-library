@@ -1,8 +1,10 @@
 ---
-Cover: {{VALUE:coverImgURL}}
+Cover: {{VALUE:coverURL}}
 ISBN13: {{VALUE:isbn13}}
 ISBN10: {{VALUE:isbn10}}
-Pages: {{VALUE:pageCt}}
+Pages: {{VALUE:pages}}
+Publication Year: {{VALUE:pubYear}}
+Publisher: {{VALUE:publisher}}
 Goodreads ID: {{VALUE:goodreadsID}}
 ---
 # {{VALUE:fullTitle}}
@@ -10,23 +12,23 @@ Goodreads ID: {{VALUE:goodreadsID}}
 Title:: {{VALUE:title}}
 Subtitle:: {{VALUE:subTitle}}
 Authors:: {{VALUE:authors}}
-Publication Year:: {{VALUE:pubYear}}
 Series:: {{VALUE:series}}
 Genres:: {{VALUE:genres}}
 Abstract:: {{VALUE:abstract}}
 
 Rating:: {{VALUE:avRating}}
-Ratings Count:: {{VALUE:numRatings}}
-Goodreads Reviews:: {{VALUE:numReviews}}
+Ratings:: {{VALUE:numRatings}}
+Reviews:: {{VALUE:numReviews}}
 
-## Book Links:
-Goodreads:: [{{VALUE:fileName}}]({{VALUE:goodreadsURL}})
-Google:: [{{VALUE:fileName}}]({{VALUE:googleURL}})
+## Reference Links:
+Goodreads URL:: [Goodreads]({{VALUE:goodreadsURL}})
+Google URL:: [Google]({{VALUE:googleURL}})
+
 
 Date Added:: [[{{DATE:gggg-MM-DD}}]]
-My Status:: {{VALUE:#want-to-read,#currently-reading,#read}}
+My Status:: {{VALUE:myStatus}}
 
-#📚books 
+#📚books
 
 ---
 # Highlights & Notes

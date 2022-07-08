@@ -3,7 +3,7 @@
 ## Demo & Screenshots
 Screenshots coming soon! Please refer to installation guide below
 
-## Description
+## 📰 Description
 This script allows you to quickly search for books and build a book tracker/library in Obsidian. For use in conjunction with [Quickadd plugin](https://github.com/chhoumann/quickadd) by @chhoumann, search and create new book notes with a complete selection of metadata fields sourced from [Google Books API](https://developers.google.com/books/) (no API key needed!) and [Goodreads](https://www.goodreads.com/). 
 
 I plan to add additional metadata sources such as: 
@@ -18,7 +18,7 @@ I plan to add additional metadata fields & features:
 - may turn this into a full fledged plugin 
 
 ---
-## Installation
+## 🛠 Installation
 **Requirement:**
 - the latest version of [QuickAdd (v. 0.5.5)](https://github.com/chhoumann/quickadd) for Obsidian 
 
@@ -41,7 +41,7 @@ I plan to add additional metadata fields & features:
 **Great! You can now use the macro to quick create a new book note to add book information to your vault!**
 
 ---
-## Available metadata fields:
+## 📃 Available metadata fields:
 Below are the possible fields to use in your book template. Simply write `{{VALUE:name}}` in your template, and replace `name` by the desired book data. Example field results are shown and the source used (src).
 
 - `fileName`: "Book Title - Author Name" (ex: `The Way of Kings - Brandon Sanderson`) (src: Google)
@@ -67,25 +67,25 @@ Below are the possible fields to use in your book template. Simply write `{{VALU
 - `seriesCount`: `(10 books)` (total # of books in the series)
 - `seriesURL`: (link to book series on Goodreads)
 
-**Rating (value)** (book's average rating (out of 5 stars), total # of ratings, and # of written reviews for the books on Goodreads)
+**Rating details** (book's average rating (out of 5 stars), total # of ratings, and # of written reviews for the books on Goodreads)
 - `avRating`: `4.63`
 - `numRatings`: `3728327`
 - `numReviews`: `26181`
 - rating info from Google Books API available as: `avRatingGOOG`, `numRatingsGOOG`, but does not provide good data
 
 **Publication Info**
-- `pubYear`: `2010` (the year the book was published)
+- `pubDate`: `2010` (the **year** the book was published)
 - `publisher`: `Tor Books` (the book's publishing company for the selection book edition)
 - `format`: `Hardcover, Paperback, Audiobook, Kindle Edition, Ebook, Magazine` (the format of this book edition)
-- `pageCt`: `823` (the total # pages in the book's print version)
+- `pages`: `823` (the total # pages in the book's print version)
 - `language`: `English` (language of this book edition)
 - `maturity`: `MATURE` or `NOT_MATURE` (whether the book is rated as mature or not)
 
 **Book Cover Image** (the URL address of the book's cover image):
-- `coverImgURL`: `https://i.gr-assets.com/images/S/compressed.photo.goodreads.com/books/1388184640l/7235533.jpg`
-- lower quality cover image URLs available from Google Books API: `coverImgURLGOOG`
+- `coverURL`: (~200-325px (WIDTH) / ~400-500px (HEIGHT) [72-300 dpi resolution]; src: Goodreads)
+- `thumbnailURL`: ( ~128px (WIDTH) / ~200 pixels (HEIGHT) [20-22 dpi resolution]; src: Google) 
 
-**Book page URL** (the URL address to the book's main page on the respective sites):
+**Reference Links** (URLs to the book's main info page on the respective sites):
 - `goodreadsURL`: `https://www.goodreads.com/book/show/7235533-the-way-of-kings`
 - `googleURL`: `https://books.google.com/books/about/The_Way_of_Kings.html?hl=&id=kIjwwAEACAAJ`
 - `amznURL`: `https://www.amazon.com/gp/product/B00540QR7Q`
@@ -97,14 +97,17 @@ Below are the possible fields to use in your book template. Simply write `{{VALU
 - `googleID`: `kIjwwAEACAAJ`
 - `amznASIN`: `B00540QR7Q`
 
+**Personal Fields** (hashtag of your current status for the book):
+- myStatus: `#toRead`, `#read`, `#reading`
+
 ---
-## Book page template (example):
+## 📐 Book page template (example):
 ```markdown
 ---
-Cover: {{VALUE:coverImgURL}}
+Cover: {{VALUE:coverURL}}
 ISBN13: {{VALUE:isbn13}}
 ISBN10: {{VALUE:isbn10}}
-Pages: {{VALUE:pageCt}}
+Pages: {{VALUE:pages}}
 Publication Year: {{VALUE:pubYear}}
 Publisher: {{VALUE:publisher}}
 Goodreads ID: {{VALUE:goodreadsID}}
@@ -121,16 +124,18 @@ Genres:: {{VALUE:genres}}
 Abstract:: {{VALUE:abstract}}
 
 Rating:: {{VALUE:avRating}}
-Ratings Count:: {{VALUE:numRatings}}
-Goodreads Reviews:: {{VALUE:numReviews}}
+Ratings:: {{VALUE:numRatings}}
+Reviews:: {{VALUE:numReviews}}
 
-## Book Links:
+
+## Reference Links:
 Goodreads URL:: [Goodreads]({{VALUE:goodreadsURL}})
-Amazon URL:: [Amazon]({{VALUE:amznURL}})
 Google URL:: [Google]({{VALUE:googleURL}})
+Amazon URL:: [Amazon]({{VALUE:amznURL}})
+
 
 Date Added:: [[{{DATE:gggg-MM-DD}}]]
-My Status:: {{VALUE:#want-to-read,#currently-reading,#read}}
+My Status:: {{VALUE:myStatus}}
 
 #📚books
 
@@ -150,15 +155,19 @@ TABLE WITHOUT ID
 	Genres AS Genres,
 	"Rating: " + Rating AS "Rating",
 	"Date Added: " + Date Added AS "Date Added"
-FROM #want-to-read AND "Library" AND #📚books AND -"_templates"
+FROM #toRead AND "Library" AND #📚books AND -"_templates"
 WHERE Cover != null
 ```
 
 
 ---
-## Disclaimer
-I am new to programming. I welcome any and all feedback. I am not responsible for any damage caused by the use of this script. I have commented the script thoroughly to help others understand it.
+## 🚧 Disclaimer
+👼 I am completely new to programming. I have tried to document the script thoroughly to help others understand it. I welcome any and all feedback! 
 
-The script is inspired by [QuickAdd - Movie And Series Script](https://github.com/chhoumann/quickadd/blob/master/docs/Examples/Macro_MovieAndSeriesScript.md) by @chhoumann and the [QuickAdd - Books Script](https://github.com/Elaws/script_googleBooks_quickAdd) by @Elaws
+⚠ I am not responsible for any damage caused by the use of this script. 
 
 **Please never run a script that you don't understand. Remember to make regular backups of your Obsidian's vault!**
+
+## 🙏Acknowledgements 
+ The script is inspired by [QuickAdd - Movie And Series Script](https://github.com/chhoumann/quickadd/blob/master/docs/Examples/Macro_MovieAndSeriesScript.md) by @chhoumann and the [QuickAdd - Books Script](https://github.com/Elaws/script_googleBooks_quickAdd) by @Elaws
+

@@ -34,7 +34,7 @@ async function start(params, settings) {
 	query = isbnCheck(query) // check if user query has ISBN identifying info
 	if (query.isbnID) {
 		// if there is ISBN info, we will query Google Books API & scrape the book's Goodreads page at the same time
-		[googleMData, greadsMData] = await Promise.allSettled([requestAPIdata(query.isbnQuery), scrapeBookData(query.isbnID)])
+		[googleMData, greadsMData] = await Promise.allSettled([requestAPIdata(query.isbnQuery), parseBookLink(query.isbnID)])
 
 		// check if fetch was successful, then destructure object to the values we want
 		googleMData =
@@ -56,19 +56,13 @@ async function start(params, settings) {
 		}
 		const isbn13 = googleMData.industryIdentifiers.find(n => n.type === 'ISBN_13')?.identifier // extract ISBNs from Google Book metadata
 		const isbn10 = googleMData.industryIdentifiers.find(n => n.type === 'ISBN_10')?.identifier
-		greadsMData = await scrapeBookData(isbn13 || isbn10) // scrape the corresponding Goodreads books page
+		greadsMData = await parseBookLink(isbn13 || isbn10) // scrape the corresponding Goodreads books page
 	}
-
-	console.log({googleMData})
-	console.log({greadsMData})
 
 	QuickAdd.variables = {
 		fileName: `${googleMData.title} - ${googleMData.authors}`,
 
-		goodreadsID: greadsMData.id,
-		googleID: googleMData.id,
-		// amznASIN: greadsMData.amznASIN,
-
+		// Book Info
 		title: googleMData.title,
 		subTitle: googleMData.subtitle ?? ' ',
 		fullTitle: googleMData.subtitle ? `${googleMData.title}: ${googleMData.subtitle}` : googleMData.title,
@@ -80,39 +74,51 @@ async function start(params, settings) {
 			.replace(/^((?=(?<series>\w+))\k<series>\s?)+(?<sNum>#\d+)/, '[[$<series>]] $<sNum>'),
 		seriesCount: greadsMData.seriesCount.match(/\([^\)]+\)/)[0],
 		seriesURL: `${greadsMData.seriesURL}`.replace(/^app:\/\/obsidian.md/m, 'https://www.goodreads.com'),
-		isbn13: greadsMData.isbn13,
-		isbn10: greadsMData.isbn10.match(/\b\d{10}\b/)[0],
 
+		// Rating Details
 		avRating: greadsMData.ratingValue,
 		numRatings: greadsMData.ratingCount,
 		numReviews: greadsMData.reviewCount,
 		avRatingGOOG: googleMData.averageRating,
 		numRatingsGOOG: googleMData.ratingsCount,
 
-		pubYear:
+		// Publication Info
+		pubDate:
 			new Date(googleMData.publishedDate)?.getFullYear() ||
 			greadsMData.publishedDate.match(/(?:Published\n\s*\b)(?:\w)+ (?:\d+\w+) (\d{4})/im)[1],
 		publisher: googleMData.publisher || greadsMData.publisher.match(/(?:by) (\w.*)$/im)[1],
 		format: greadsMData.printType,
-		pageCt: greadsMData.pageCount,
+		pages: greadsMData.pageCount,
 		language: greadsMData.language,
 		maturity: googleMData.maturityRating,
 
-		coverImgURL: greadsMData.imageLinks,
-		coverImgURLGOOG: `${googleMData.imageLinks?.thumbnail}`?.replace('http:', 'https:') ?? ' ',
+		// Book Cover Images
+		coverURL: greadsMData.imageLinks,
+		thumbnailURL: `${googleMData.imageLinks?.thumbnail}`?.replace('http:', 'https:') ?? ' ',
 
+		// Reference Links
 		goodreadsURL: greadsMData.canonicalVolumeLink,
 		googleURL: googleMData.canonicalVolumeLink,
 		//amznURL: `${greadsMData.amznASIN !== ' ' && `https://www.amazon.com/gp/product/${greadsMData.amazonASIN}`}`,
+
+		// Book Identifiers & Unique IDs
+		isbn13: greadsMData.isbn13,
+		isbn10: greadsMData.isbn10.match(/\b\d{10}\b/)[0],
+		goodreadsID: greadsMData.id,
+		googleID: googleMData.id,
+		// amznASIN: greadsMData.amznASIN,
+
+		// Personal Fields
+		myStatus: await params.quickAddApi.suggester(["To Read", "Completed Reading", "Currently Reading"], ["#toRead", "#read", "#reading"]),
 	}
 }
 
 let isbnCheck = str => {
-	const isbnPre = /(?:\bISBN[- ]?(1[03])?[-: ]*)?/gi // REGEX; ISBN identifier prefix
-	const isbnNum = /(97[89])?[\dX]{10}$|(?=(?:(\d+?[- ]){3,4}))([\dX](?:[- ])*?){10}(([\dX](?:[- ])*?){3})?$/g // REGEX; look for ISBN-10/13 taking into account spaces or dashes
+	const ISBN_PREFIX_REGEX = /(?:\bISBN[- ]?(1[03])?[-: ]*)?/gi // REGEX; ISBN identifier prefix
+	const ISBN_REGEX = /(97[89])?[\dX]{10}$|(?=(?:(\d+?[- ]){3,4}))([\dX](?:[- ])*?){10}(([\dX](?:[- ])*?){3})?$/g // REGEX; look for ISBN-10/13 taking into account spaces or dashes
 
-	if (!isbnPre.test(str) || !isbnNum.test(str)) return str // if no REGEX matches, return the original query
-	let isbnID = str.match(isbnNum)[0].replaceAll(/[- ]/g, '') // else, extract ISBN using the regex & clean up so its only numbers
+	if (!ISBN_PREFIX_REGEX.test(str) || !ISBN_REGEX.test(str)) return str // if no REGEX matches, return the original query
+	let isbnID = str.match(ISBN_REGEX)[0].replaceAll(/[- ]/g, '') // else, extract ISBN using the regex & clean up so its only numbers
 	return { isbnQuery: `isbn:${isbnID}`, isbnID } // return modified query value for Google books API, and extracted ISBN to scrape its specific Goodread's page
 }
 
@@ -139,7 +145,7 @@ let requestAPIdata = async query => {
 	}
 }
 
-let scrapeBookData = async isbn => {
+let parseBookLink = async isbn => {
 	let goodreadsQueryURL = new URL(GOODREADS_SEARCH_URL)
 	goodreadsQueryURL.searchParams.set('q', isbn)
 	goodreadsQueryURL.searchParams.set('search_type', 'books') // construct full request URL for Goodreads website
