@@ -3,7 +3,7 @@ Cover: {{VALUE:coverURL}}
 ISBN13: {{VALUE:isbn13}}
 ISBN10: {{VALUE:isbn10}}
 Pages: {{VALUE:pages}}
-Publication Year: {{VALUE:pubYear}}
+Publication Year: {{VALUE:pubDate}}
 Publisher: {{VALUE:publisher}}
 Goodreads ID: {{VALUE:goodreadsID}}
 ---
