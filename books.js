@@ -1,6 +1,7 @@
 const notice = msg => new Notice(msg, 6000)
 const log = msg => console.log(msg)
 
+// Declare our global variables; const means the variable cannot be reassigned
 // Google Books does not require an API key for book queries (https://developers.google.com/books/docs/v1/using#PerformingSearch)
 const GOOG_API_URL = 'https://www.googleapis.com/books/v1/volumes'
 const GOODREADS_SEARCH_URL = 'https://www.goodreads.com/search?'
@@ -13,36 +14,44 @@ module.exports = {
 	},
 }
 
-let QuickAdd
-let Settings
+let QuickAdd, Settings
 
 async function start(params, settings) {
 	QuickAdd = params
 	Settings = settings
-	// single line prompt for user query; can be book title, author, ISBN, etc.
+
+	// Display a single-line prompt for user query entry (it can be book title, author, ISBN, etc). Throw an error if no input
 	let query = await QuickAdd.quickAddApi.inputPrompt('📖 Search by any keywords (title, author, ISBN, etc.): ')
-	query &&= query.trim().replace(/[\\,#%&!?\{\}\/*<>`$\'\":@.*]/g, '') //use REGEX to clean up user entry
-	// throw error if user does not enter a query
 	if (!query) {
 		notice('❗No query entered')
 		throw new Error('No query entered')
 	}
 
-	let googleMData, greadsMData // declare object variables where we will store out book metadata from our two sources
+	// Declare the object variables where we will store the book metadata from our two sources. They are declared here because they will be used in either parts of the following if/else statement
+	let googleMData, greadsMData
 
-	// check if user query contains ISBN
+	/* This if/else statement first sends the user query to the isbnCheck() which returns either an extracted ISBN or the original user query (if no ISBN present).
+	Whatever is returned is assigned to the reassignable query variable (becuase we declared it with 'let').
+	Then the 'query' is evaluated by Number.isInteger() which is true if query is an ISBN (integer number) which executes if{}, 
+	or false if query is a string which executes the else{} */
 	if (Number.isInteger((query = isbnCheck(query)))) {
-		// if ISBN is extracted from user query, we can retrieve metadata for the specific book from our two sources in parallel. Immediately destructure the promises returned
+		/* if an ISBN is stored in 'query', we know the specific book the user is looking for and can therefore retrieve its metadata from our two sources in parallel
+		Promise.allSettled() handles the promises from our asyncronous functions: requestAPIdata() & parseBookLink(), waitng for both to return
+		The left side of eq. is an immediate destructuring assignment which assigns the data returned from requestAPIdata() to googleMData var & parseBookLink() to greadsMData var */
 		;[googleMData, greadsMData] = await Promise.allSettled([requestAPIdata(`isbn:${query}`), parseBookLink(query)])
 
-		// if promises were successful, use destructuring & spread operator to save only the metadata we want back into the main metadata containers/objects
+		/* A short-circuting operator && is used in lieu of an if/else statement, where the right side is assigned to our variable if the left side is truthy. 
+		We reassign out variable to only keep the data we want, here the rest operator and destructuring our utilized */
 		googleMData =
 			googleMData.status === 'fulfilled' && (({ id, volumeInfo }) => ({ id, ...volumeInfo }))(googleMData.value[0])
 		greadsMData = greadsMData.status === 'fulfilled' && greadsMData.value
 	} else {
-		// if user query contains no ISBN, search using the Google Books API first
+		// if user query has no ISBN identifier, the user's query is sent to the Google Books API, which returns the top 10 matches (default)
 		const results = await requestAPIdata(query)
-		// results returned from Google Books API is deduplicated by comparing their ISBN13
+		/* Duplicate results that all refer to the same book are common (different publishers, publication years, editions, etc. can all have the same ISBN)
+		To deduplicate the results, we use map() to iterate through the results and create a new array with the result's ISBN13 as a 'key', and extracted/destructured metadata as the 'value'
+		A feature of Maps is that their keys must be unique, so by constructing a new Map() from the resulting array, the results are deduplicated by the ISBN13 keys we created.
+		The Map is converted back into an array using the spread operator shorthand [...] keeping only the book metadata values by Map values() and assigned to uniqueResults */
 		const uniqueResults = [
 			...new Map(
 				results.map(({ id, volumeInfo }) => [
@@ -51,20 +60,19 @@ async function start(params, settings) {
 				])
 			).values(),
 		]
-		//prompt user with list of unique book results to choose from
+		// Prompt user with list of unique book results to choose from and save that book's metadata to googleMData. Throw an error if no book is selected
 		googleMData = await QuickAdd.quickAddApi.suggester(uniqueResults.map(formatSuggestions), uniqueResults)
-		// if no book is selected, throw an error
 		if (!googleMData) {
 			notice('❗No choice selected')
 			throw new Error('No choice selected')
 		}
-		// extract the ISBNs from the selected book to find the book's page on Goodreads
+		// Extract the user's selected book's ISBN which allows us to target the book's page on Goodreads
 		const isbn13 = googleMData.industryIdentifiers.find(n => n.type === 'ISBN_13')?.identifier
 		const isbn10 = googleMData.industryIdentifiers.find(n => n.type === 'ISBN_10')?.identifier
 		greadsMData = await parseBookLink(isbn13 || isbn10)
 	}
 
-	// assign our collected metadata to user friendly variables for use in their personalized templates
+	// Assign our collected metadata to user friendly variables for use in their personalized templates
 	QuickAdd.variables = {
 		fileName: `${googleMData.title} - ${googleMData.authors}`,
 
@@ -100,7 +108,7 @@ async function start(params, settings) {
 
 		// Book Cover Images
 		coverURL: greadsMData.imageLinks,
-		thumbnailURL: `${googleMData.imageLinks?.thumbnail}`?.replace('http:', 'https:') ?? ' ',
+		thumbnailURL: `${googleMData.imageLinks?.thumbnail}`?.replace(/^http:/, 'https:') ?? ' ',
 
 		// Reference Links
 		goodreadsURL: greadsMData.canonicalVolumeLink,
@@ -116,7 +124,7 @@ async function start(params, settings) {
 
 		// Personal Fields
 		myStatus: await params.quickAddApi.suggester(
-			['To Read', 'Completed Reading', 'Currently Reading'],
+			['📚 To Read', '📗 Completed Reading', '📖 Currently Reading'],
 			['#toRead', '#read', '#reading']
 		),
 	}
@@ -125,17 +133,18 @@ async function start(params, settings) {
 let isbnCheck = str => {
 	const ISBN_PREFIX_REGEX = /(?:\bISBN[- ]?(1[03])?[-: ]*)?/gi // REGEX; ISBN identifier prefix
 	const ISBN_REGEX = /(97[89])?[\dX]{10}$|(?=(?:(\d+?[- ]){3,4}))([\dX](?:[- ])*?){10}(([\dX](?:[- ])*?){3})?$/g // REGEX; for ISBN-10/13 taking into account spaces or dashes
+	const ILLEGAL_CHAR_REGEX = /[\\,#%&!?\{\}\/*<>`$\'\":@.*]/g // REGEX; common illegal characters for API queries
 
-	if (!ISBN_PREFIX_REGEX.test(str) || !ISBN_REGEX.test(str)) return str // if no REGEX matches, return the original query
-	return +str.match(ISBN_REGEX)[0].replaceAll(/[- ]/g, '') // else, use REGEX to extract ISBN and remove dashes/spaces, and return
+	if (!ISBN_PREFIX_REGEX.test(str) || !ISBN_REGEX.test(str)) return str.trim().replace(ILLEGAL_CHAR_REGEX, '') // if no ISBN REGEX matches, clean up user's query, and return
+	return +str.match(ISBN_REGEX)[0].replaceAll(/[- ]/g, '') // else, use ISBN_REGEX to extract ISBN, remove dashes/spaces, and return 10/13 char number
 }
 
 let requestAPIdata = async query => {
 	let constructURL = new URL(GOOG_API_URL)
-	constructURL.searchParams.set('q', query) // construct full query URL for Google books API
-	const googleQueryURL = decodeURIComponent(constructURL.href) // decodeURI necessary so symbols in URL like ':' are not malformed in http request
+	constructURL.searchParams.set('q', query) // Construct full query URL for Google books API
+	const googleQueryURL = decodeURIComponent(constructURL.href) // DecodeURI necessary so symbols in URL like ':' are not malformed in http request
 
-	// request a URL using HTTP/HTTPS, without any CORS restrictions (similar to fetch())
+	// Request URL using HTTP/HTTPS, without any CORS restrictions (similar to fetch())
 	try {
 		const response = await request({
 			url: googleQueryURL,
@@ -214,7 +223,7 @@ let formatSuggestions = resultItem => {
 
 // convert a list into a wikilinks list separated by commas
 let wikiLnkList = list => {
-	if (list?.length === 0) return ' '
-	if (list?.length === 1) return `[[${list[0]}]]`
+	if (list?.size === 0) return ' '
+	if (list?.size === 1) return `[[${list[0]}]]`
 	return Array.from(list, i => `[[${i.trim()}]]`)?.join(', ') ?? ' '
 }
