@@ -56,8 +56,8 @@ Below are the possible fields to use in your book template. Simply write `{{VALU
 - `authors`: `[[author 1]]`, `[[author 2]]`, `[[author 3]]` 
 
 **Abstract** (a brief description of the book, like the blurbs you would find on a book jacket) (src: Goodreads) :
-- `abstract`: full descriptions 
-- shorter descriptions are also available from google using `googleMData.description`
+- `abstract`: full length descriptions (~150-300 words)
+- `briefAbstract`: shorter length descriptions (~50-100 words)
 
 **Genres** (`[[wiklink]]` list of the book's top 5 genres separated by commas) (src: Goodreads):
 - `genres`: `[[genre 1]]`, `[[genre 2]]`, `[[genre 3]]`, `[[genre 4]]`, `[[genre 5]]`

@@ -1,11 +1,6 @@
 const notice = msg => new Notice(msg, 6000)
 const log = msg => console.log(msg)
 
-// Declare our global variables; const means the variable cannot be reassigned
-// Google Books does not require an API key for book queries (https://developers.google.com/books/docs/v1/using#PerformingSearch)
-const GOOG_API_URL = 'https://www.googleapis.com/books/v1/volumes'
-const GOODREADS_SEARCH_URL = 'https://www.goodreads.com/search?'
-
 module.exports = {
 	entry: start,
 	settings: {
@@ -26,7 +21,6 @@ async function start(params, settings) {
 		notice('❗No query entered')
 		throw new Error('No query entered')
 	}
-
 	// Declare the object variables where we will store the book metadata from our two sources. They are declared here because they will be used in either parts of the following if/else statement
 	let googleMData, greadsMData
 
@@ -49,27 +43,25 @@ async function start(params, settings) {
 		// if user query has no ISBN identifier, the user's query is sent to the Google Books API, which returns the top 10 matches (default)
 		const results = await requestAPIdata(query)
 		/* Duplicate results that all refer to the same book are common (different publishers, publication years, editions, etc. can all have the same ISBN)
-		To deduplicate the results, we use map() to iterate through the results and create a new array with the result's ISBN13 as a 'key', and extracted/destructured metadata as the 'value'
-		A feature of Maps is that their keys must be unique, so by constructing a new Map() from the resulting array, the results are deduplicated by the ISBN13 keys we created.
-		The Map is converted back into an array using the spread operator shorthand [...] keeping only the book metadata values by Map values() and assigned to uniqueResults */
+		To deduplicate the results, we use map() to iterate through the results and create a new array with the result's ISBN13 as a 'key', and extract/destructure certain metadata as the 'value'
+		A feature of Maps are that keys must be unique, so constructing a new Map() deduplicates the results by the ISBN13 keys we created. However, the new Map will overwrite values of duplicate keys, so in order to maintain the integrity of the order of the search results, slice().reverse() is used to create a reversed-order shallow copy.
+		The spread syntax [...] converts te map back into an array, keeping only the metadata values(), results are reversed again to present results in relevance order */
 		const uniqueResults = [
 			...new Map(
-				results.map(({ id, volumeInfo }) => [
-					+volumeInfo.industryIdentifiers.find(n => n.type === 'ISBN_13')?.identifier,
-					{ id, ...volumeInfo },
-				])
+				results
+					.slice()
+					.reverse()
+					.map(({ id, volumeInfo }) => [+volumeInfo.ISBN_13, { id, ...volumeInfo }])
 			).values(),
-		]
+		].reverse()
+
 		// Prompt user with list of unique book results to choose from and save that book's metadata to googleMData. Throw an error if no book is selected
 		googleMData = await QuickAdd.quickAddApi.suggester(uniqueResults.map(formatSuggestions), uniqueResults)
 		if (!googleMData) {
 			notice('❗No choice selected')
 			throw new Error('No choice selected')
 		}
-		// Extract the user's selected book's ISBN which allows us to target the book's page on Goodreads
-		const isbn13 = googleMData.industryIdentifiers.find(n => n.type === 'ISBN_13')?.identifier
-		const isbn10 = googleMData.industryIdentifiers.find(n => n.type === 'ISBN_10')?.identifier
-		greadsMData = await parseBookLink(isbn13 || isbn10)
+		greadsMData = await parseBookLink(googleMData.ISBN_13 ?? googleMData.ISBN_10)
 	}
 
 	// Assign our collected metadata to user friendly variables for use in their personalized templates
@@ -81,13 +73,14 @@ async function start(params, settings) {
 		subTitle: googleMData.subtitle ?? ' ',
 		fullTitle: googleMData.subtitle ? `${googleMData.title}: ${googleMData.subtitle}` : googleMData.title,
 		authors: wikiLnkList(greadsMData.authors),
+		briefAbstract: googleMData.description,
 		abstract: greadsMData.description,
 		genres: wikiLnkList(greadsMData.categories),
 		series: greadsMData.series
 			.slice(1, -1)
 			.replace(/^((?=(?<series>\w+))\k<series>\s?)+(?<sNum>#\d+)/, '[[$<series>]] $<sNum>'),
-		seriesCount: greadsMData.seriesCount.match(/\([^\)]+\)/)[0],
-		seriesURL: `${greadsMData.seriesURL}`.replace(/^app:\/\/obsidian.md/m, 'https://www.goodreads.com'),
+		seriesCount: greadsMData.seriesCount.match(/\([^)]+\)/)[0],
+		seriesURL: `${greadsMData.seriesURL}`.replace(/^app:\/\/obsidian.md/m, 'https://www.goodreads.com') || ' ',
 
 		// Rating Details
 		avRating: greadsMData.ratingValue,
@@ -98,9 +91,9 @@ async function start(params, settings) {
 
 		// Publication Info
 		pubDate:
-			new Date(googleMData.publishedDate)?.getFullYear() ||
-			greadsMData.publishedDate.match(/(?:Published\n\s*\b)(?:\w)+ (?:\d+\w+) (\d{4})/im)[1],
-		publisher: googleMData.publisher || greadsMData.publisher.match(/(?:by) (\w.*)$/im)[1],
+			new Date(googleMData.publishedDate).getFullYear() ||
+			`${greadsMData.publishInfo}`.match(/(?:Published\n\s*\b)(?:\w)+ (?:\d+\w+) (\d{4})/im)[1],
+		publisher: googleMData.publisher || `${greadsMData.publishInfo}`.match(/(?:by) (\w.*)$/im)[1],
 		format: greadsMData.printType,
 		pages: greadsMData.pageCount,
 		language: greadsMData.language,
@@ -108,19 +101,19 @@ async function start(params, settings) {
 
 		// Book Cover Images
 		coverURL: greadsMData.imageLinks,
-		thumbnailURL: `${googleMData.imageLinks?.thumbnail}`?.replace(/^http:/, 'https:') ?? ' ',
+		thumbnailURL: `${googleMData.imageLinks?.thumbnail}`.replace('http:', 'https:') || ' ',
 
 		// Reference Links
 		goodreadsURL: greadsMData.canonicalVolumeLink,
 		googleURL: googleMData.canonicalVolumeLink,
-		//amznURL: `${greadsMData.amznASIN !== ' ' && `https://www.amazon.com/gp/product/${greadsMData.amazonASIN}`}`,
+		//amznURL: greadsMData.amznASIN !== undefined && `https://www.amazon.com/gp/product/${greadsMData.amznASIN}`,
 
 		// Book Identifiers & Unique IDs
-		isbn13: greadsMData.isbn13,
-		isbn10: greadsMData.isbn10.match(/\b\d{10}\b/)[0],
+		isbn13: googleMData.ISBN_13 || greadsMData.isbn13,
+		isbn10: googleMData.ISBN_10 || `${greadsMData.isbn10}`.match(/\b\d{10}\b/)[0],
 		goodreadsID: greadsMData.id,
 		googleID: googleMData.id,
-		// amznASIN: greadsMData.amznASIN,
+		//amznASIN: greadsMData.amznASIN,
 
 		// Personal Fields
 		myStatus: await params.quickAddApi.suggester(
@@ -133,13 +126,16 @@ async function start(params, settings) {
 let isbnCheck = str => {
 	const ISBN_PREFIX_REGEX = /(?:\bISBN[- ]?(1[03])?[-: ]*)?/gi // REGEX; ISBN identifier prefix
 	const ISBN_REGEX = /(97[89])?[\dX]{10}$|(?=(?:(\d+?[- ]){3,4}))([\dX](?:[- ])*?){10}(([\dX](?:[- ])*?){3})?$/g // REGEX; for ISBN-10/13 taking into account spaces or dashes
-	const ILLEGAL_CHAR_REGEX = /[\\,#%&!?\{\}\/*<>`$\'\":@.*]/g // REGEX; common illegal characters for API queries
+	const ILLEGAL_CHAR_REGEX = /[-\\,#%&+\/\*{}<>\$":@.]*/g // REGEX; common illegal characters for API queries
 
-	if (!ISBN_PREFIX_REGEX.test(str) || !ISBN_REGEX.test(str)) return str.trim().replace(ILLEGAL_CHAR_REGEX, '') // if no ISBN REGEX matches, clean up user's query, and return
+	if (!ISBN_PREFIX_REGEX.test(str) || !ISBN_REGEX.test(str)) return str.trim().replaceAll(ILLEGAL_CHAR_REGEX, '') // if no ISBN REGEX matches, clean up user's query, and return
 	return +str.match(ISBN_REGEX)[0].replaceAll(/[- ]/g, '') // else, use ISBN_REGEX to extract ISBN, remove dashes/spaces, and return 10/13 char number
 }
 
 let requestAPIdata = async query => {
+	// Google Books does not require an API key for book queries (https://developers.google.com/books/docs/v1/using#PerformingSearch)
+	const GOOG_API_URL = 'https://www.googleapis.com/books/v1/volumes'
+
 	let constructURL = new URL(GOOG_API_URL)
 	constructURL.searchParams.set('q', query) // Construct full query URL for Google books API
 	const googleQueryURL = decodeURIComponent(constructURL.href) // DecodeURI necessary so symbols in URL like ':' are not malformed in http request
@@ -150,7 +146,7 @@ let requestAPIdata = async query => {
 			url: googleQueryURL,
 			cache: 'no-cache',
 		})
-		const index = await JSON.parse(response) // this method turns the json reply string into an object
+		const index = await JSON.parse(response, isbnReviver) // this method turns the json reply string into an object
 		return await index.items
 	} catch (error) {
 		if (index.totalItems === 0) {
@@ -163,55 +159,65 @@ let requestAPIdata = async query => {
 	}
 }
 
+// Reviver() for JSON.parse to extract deeply nested/key-disassociated ISBN. Reduce() outperforms map()
+const isbnReviver = (key, value) => {
+	if (key === 'volumeInfo') {
+		value.industryIdentifiers.reduce((acc, { type, identifier }) => ((value[type] = identifier), acc), {})
+	}
+	return value // un-modified key/value pass though here
+}
+
 let parseBookLink = async isbn => {
+	const GOODREADS_SEARCH_URL = 'https://www.goodreads.com/search?'
+
 	let goodreadsQueryURL = new URL(GOODREADS_SEARCH_URL)
 	goodreadsQueryURL.searchParams.set('q', isbn)
 	goodreadsQueryURL.searchParams.set('search_type', 'books') // construct full request URL for Goodreads website
 
 	const bookPage = await request({ url: goodreadsQueryURL.href })
 	const document = new DOMParser().parseFromString(bookPage, 'text/html') // turn requested webpage into DOM tree
-	const $ = (selectors, attr) => document.querySelector(selectors)[attr].trim() // create shorthands for querySelector methods used to traverse DOM tree (mimics jQuery)
-	const $$ = (selectors, attr) => new Set(Array.from(document.querySelectorAll(selectors), x => x[attr]))
-
-	// array of metadata fields w/associated CSS selectors for Goodreads
-	const goodreadsCSSelectors = [
-		{ field: 'id', el: '#book_id', val: 'value' },
-		{ field: 'title', el: 'h1#bookTitle', val: 'innerText' },
-		{ field: 'authors', el: '#bookAuthors a.authorName span[itemprop=name]', qs: $$ },
-		{ field: 'description', el: '#descriptionContainer #description span:last-of-type', val: 'innerHTML' },
-		{ field: 'isbn13', el: "meta[property='books:isbn']", val: 'content' },
-		{ field: 'isbn10', el: '#bookDataBox .clearFloats:nth-child(2) .infoBoxRowItem' },
-		{
-			field: 'categories',
-			el: '.bigBoxContent.containerWithHeaderContent .elementList:nth-child(-n+5) a.actionLinkLite.bookPageGenreLink', // bookPageGenreLink:last-of-type
-			qs: $$,
-		},
-		{ field: 'series', el: 'h2#bookSeries', val: 'innerText' }, //selector for h2 element whose ID-typed attribute has the value "bookSeries"
-		{ field: 'seriesCount', el: '.seriesList .bigBoxContent.containerWithHeaderContent', val: 'innerText' },
-		{ field: 'seriesURL', el: '.seriesList a', val: 'href' },
-		{ field: 'ratingValue', el: '#bookMeta span[itemprop=ratingValue]' },
-		{ field: 'ratingCount', el: '#bookMeta meta[itemprop=ratingCount]', val: 'content' },
-		{ field: 'reviewCount', el: '#bookMeta meta[itemprop=reviewCount]', val: 'content' },
-		{ field: 'imageLinks', el: '.bookCoverContainer img', val: 'src' },
-		{ field: 'publishedDate', el: '#details .row:nth-child(2)' },
-		{ field: 'publisher', el: '#details .row:nth-child(2)' },
-		{ field: 'language', el: '#bookDataBox .clearFloats:nth-child(3) .infoBoxRowItem' },
-		{ field: 'printType', el: '#details span[itemprop=bookFormat]' },
-		{ field: 'pageCount', el: "meta[property='books:page_count']", val: 'content' },
-		{ field: 'canonicalVolumeLink', el: "link[rel='canonical']", val: 'href' },
-		//{ field: 'amznASIN', el: 'ul.buyButtonBar.left li a.glideButton.buttonBar', val: 'dataset' }, //dataset.asin
-		//{ field: 'amznURL', el: 'ul.buyButtonBar.left a.glideButton.buttonBar', val: 'dataset.amazonUrl'},
+	const $ = ([el, attr = 'textContent']) => document.querySelector(el)[attr].trim() // create shorthands for querySelector methods used to traverse DOM tree (mimics jQuery)
+	const $$ = ([el, attr = 'textContent']) => [
+		...new Set(Array.from(document.querySelectorAll(el), x => x[attr].trim())),
 	]
 
-	// use the array 'reduce' method to loop through the CSS selectors array and assign results to a book metadata object
-	const bookMData = goodreadsCSSelectors.reduce(
-		(acc, { field, el, val = 'textContent', qs = $, fieldVal = qs(el, val) } = {}) => {
-			fieldVal && (acc[field] = fieldVal)
-			return acc
-		},
-		{}
-	)
-	return bookMData
+	// Map of metadata fields w/associated CSS selectors for Goodreads
+	let gdreadsElemSel = new Map([
+		['id', ['#book_id', 'value']],
+		['title', ['#bookTitle', 'innerText']],
+		['description', ['#description span:last-of-type', 'innerHTML']],
+		['isbn13', ["meta[property='books:isbn']", 'content']],
+		['isbn10', ['#bookDataBox .clearFloats:nth-child(2) .infoBoxRowItem']],
+		['ratingValue', ['#bookMeta span[itemprop=ratingValue]']],
+		['ratingCount', ['#bookMeta meta[itemprop=ratingCount]', 'content']],
+		['reviewCount', ['#bookMeta meta[itemprop=reviewCount]', 'content']],
+		['imageLinks', ['.bookCoverContainer img', 'src']],
+		['publishInfo', ['#details .row:nth-child(2)']],
+		['language', ['#bookDataBox .clearFloats:nth-child(3) .infoBoxRowItem']],
+		['printType', ['#details span[itemprop=bookFormat]']],
+		['pageCount', ["meta[property='books:page_count']", 'content']],
+		['canonicalVolumeLink', ["link[rel='canonical']", 'href']],
+		['series', ['#bookSeries', 'innerText']], // Selector for h2 element whose ID-typed attribute has the value "bookSeries"
+		['seriesCount', ['.seriesList .bigBoxContent.containerWithHeaderContent']],
+		['seriesURL', ['.seriesList a', 'href']],
+		//['amznASIN', ['ul.buyButtonBar.left li a.glideButton.buttonBar', 'dataset.asin']],
+		//['amznURL', ['ul.buyButtonBar.left li a.glideButton.buttonBar', 'dataset.amazonUrl']],
+	])
+
+	let gdreadsNodeSel = new Map([
+		['authors', ['#bookAuthors a.authorName span[itemprop=name]']],
+		[
+			'categories',
+			[
+				'.bigBoxContent.containerWithHeaderContent .elementList:nth-child(-n+5) a.actionLinkLite.bookPageGenreLink:last-of-type',
+			],
+		],
+	])
+	// Iterate over the maps and mutate the value of each key to contain metadata. Return a book metadata object.
+	// Refactored from a cleaner Array.reduce() setup since Map w/forEach significantly outperforms.
+	gdreadsElemSel.forEach((value, key, map) => map.set(key, $(value)))
+	gdreadsNodeSel.forEach((value, key) => gdreadsElemSel.set(key, $$(value)))
+	return Object.fromEntries(gdreadsElemSel)
 }
 
 // Formats string for our suggestion prompt; shows '📚' prefix if a book cover image is available or (📵) if not
@@ -221,9 +227,8 @@ let formatSuggestions = resultItem => {
 	).getFullYear()})`
 }
 
-// convert a list into a wikilinks list separated by commas
+// Convert a array into a wikilinks list of each item separated by commas
 let wikiLnkList = list => {
-	if (list?.size === 0) return ' '
-	if (list?.size === 1) return `[[${list[0]}]]`
-	return Array.from(list, i => `[[${i.trim()}]]`)?.join(', ') ?? ' '
+	if (list?.length === 1) return `[[${list[0]}]]`
+	return list?.map(i => `[[${i.trim()}]]`).join(', ') ?? ' '
 }
