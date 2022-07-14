@@ -1,12 +1,40 @@
 {
 	"env": {
 		"browser": true,
-		"es2021": true
+		"es2022": true,
+		"node": true
 	},
 	"extends": "prettier",
 	"parserOptions": {
 		"ecmaVersion": "latest",
 		"sourceType": "module"
 	},
-	"rules": {}
+	"rules": {
+		"eqeqeq": "error", // Require === and !==
+		"no-unneeded-ternary": "error", // Disallow ternary operators when simpler alternatives exist
+		"prefer-spread": "error", // Spread operators instead of .apply()
+		"prefer-rest-params": "error", // Rest parameters instead of arguments
+		"default-param-last": "error", // Default parameters to be last in parameter list
+		"no-useless-escape": "error", // Disallow unnecessary escape characters
+		"no-new-wrappers": "error", // Disallow unecessary 'new' keyword before String, Number, Boolean
+		"prefer-template": "error", // Template literals instead of string concatenation
+
+		"no-undef": "error", // Disallow undeclared variables
+		"no-unused-vars": "error", // Disallow unused variables
+		"camelcase": "error", // Enforce camelcase naming convention
+		"no-underscore-dangle": "error", // Disallow leading underscore in variable names
+		"prefer-const": "error", // Require const declarations for variables that are never reassigned after declared
+		"no-const-assign": "error", // Disallow reassigning const variables
+
+		"prefer-arrow-callback": "error", // Arrow functions for callbacks
+		"arrow-body-style": ["error", "as-needed"], // No braces around arrow function bodies where they can be omitted
+
+		"no-new-object": "error", // Use object creation literal shorthand
+		"object-shorthand": "error", // Use property value shorthand
+		"prefer-object-spread": "error", // Disallow Object.assign
+		"array-callback-return": "error", //  Require return statement in callbacks of array’s methods
+
+		"no-duplicate-imports": "error", // Disallow duplicate module imports
+		"no-else-return": "error" // Disallow unecessary else blocks after return statements in if statements
+	}
 }
